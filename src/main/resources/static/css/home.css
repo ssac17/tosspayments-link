@@ -1,0 +1,290 @@
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+    background-color: #f2f4f6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.card-container {
+    background: #ffffff;
+    width: 100%;
+    max-width: 420px;
+    padding: 32px 24px;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.brand-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #191f28;
+    margin-bottom: 8px;
+}
+
+.sub-title {
+    font-size: 14px;
+    color: #8b95a1;
+    margin-bottom: 28px;
+}
+
+.product-info {
+    background-color: #f9fafb;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 28px;
+    text-align: left;
+}
+
+.product-name {
+    font-size: 15px;
+    color: #4e5968;
+    margin-bottom: 6px;
+}
+
+.product-price {
+    font-size: 24px;
+    font-weight: 700;
+    color: #191f28;
+}
+
+.toss-btn {
+    width: 100%;
+    background-color: #0051ff;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.toss-btn:hover {
+    background-color: #0046dc;
+}
+
+.toss-btn:active {
+    transform: scale(0.98);
+}
+
+.footer-note {
+    margin-top: 16px;
+    font-size: 12px;
+    color: #b0b8c1;
+}
+/* ===================================================
+   💳 [모달 라이트박스 & 블러 배경 스타일]
+   =================================================== */
+
+/* 1. 뒷배경 (화면 전체 덮기 + 블러 + 어둡게) */
+.modal-overlay {
+    display: none; /* 기본적으로 숨김 */
+    position: fixed; /* 화면 스크롤해도 항상 고정 */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+
+    /* 💡 핵심: 반투명 어두운 배경 + 뒤 배경 블러 처리! */
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(5px); /* 뒤쪽 화면 블러(흐림) 효과 */
+    -webkit-backdrop-filter: blur(5px); /* Safari 지원 */
+
+    /* 💡 핵심: 화면 정가운데 정렬 */
+    justify-content: center;
+    align-items: center;
+
+    z-index: 9999; /* 화면의 맨 위에 띄우기 */
+}
+
+/* 2. 모달 하얀색 박스 (가운데 팝업) */
+.modal-content {
+    background-color: #ffffff;
+    width: 90%;
+    max-width: 440px; /* 너비를 살짝 줄여 비율 유지 */
+    padding: 20px;   /* 내부 여백을 줄여 높이 단축 (24px -> 20px) */
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+
+    /* 💡 스크롤 제거 핵심: 스크롤바 숨기고 최대 높이 맞춤 */
+    max-height: 90vh;
+    overflow: hidden; /* 스크롤바 완전히 숨김 */
+
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    animation: modalSlideUp 0.25s ease-out;
+}
+
+/* 3. 닫기 버튼 우측 상단 정렬 */
+.close-btn {
+    width: 100%;
+    background-color: #f2f4f6;
+    color: #4e5968;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px; /* 상단 간격 축소 */
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background-color: #e5e8eb;
+}
+
+/* 💡 스르륵 올라오는 애니메이션 키프레임 */
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===================================================
+   🎟️ 쿠폰 체크박스 & 💳 결제하기 버튼 커스텀 CSS
+   =================================================== */
+
+/* 1. 쿠폰 박스 컨테이너 */
+#checkoutModal input[type="checkbox"] {
+    display: none; /* 기본 투박한 체크박스 숨기기 */
+}
+
+/* 커스텀 쿠폰 라벨 (버튼형 체크박스) */
+#checkoutModal label[for="coupon-box"] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background-color: #f9fafb;
+    border: 1.5px solid #e5e8eb;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333d4b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    margin-bottom: 20px;
+}
+
+/* 쿠폰 체크박스 마우스 올렸을 때 */
+#checkoutModal label[for="coupon-box"]:hover {
+    background-color: #f2f4f6;
+    border-color: #d1d6db;
+}
+
+/* 쿠폰 선택(Checked) 되었을 때 스타일 */
+#checkoutModal input[type="checkbox"]:checked + label[for="coupon-box"] {
+    background-color: #e8f3ff;
+    border-color: #0051ff;
+    color: #0051ff;
+}
+
+/* 쿠폰 라벨 우측에 뱃지 아이콘/체크 모양 표시 */
+#checkoutModal label[for="coupon-box"]::after {
+    content: "선택";
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background-color: #e5e8eb;
+    color: #6b7684;
+}
+
+#checkoutModal input[type="checkbox"]:checked + label[for="coupon-box"]::after {
+    content: "✓ 적용됨";
+    background-color: #0051ff;
+    color: #ffffff;
+}
+
+/* 2. 결제하기 메인 버튼 */
+#payment-button {
+    width: 100%;
+    background-color: #0051ff;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px; /* 버튼 높이 축소 (16px -> 14px) */
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 81, 255, 0.2);
+    margin-top: 10px !important; /* 상단 여백 축소 */
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+/* 결제 버튼 마우스 올렸을 때 */
+#payment-button:hover {
+    background-color: #0046dc;
+    box-shadow: 0 6px 16px rgba(0, 81, 255, 0.3);
+}
+
+/* 결제 버튼 클릭할 때 (눌림 효과) */
+#payment-button:active {
+    transform: scale(0.98);
+}
+
+#payment-method {
+    margin-top: -10px; /* 토스 위젯 상단 자체 여백 축소 */
+    margin-bottom: -10px;
+}
+
+#agreement {
+    margin-top: -5px;  /* 약관 영역 여백 축소 */
+}
+
+/* 3. 쿠폰 체크박스 라벨 컴팩트화 */
+#checkoutModal label[for="coupon-box"] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px; /* 여백 축소 (14px 18px -> 10px 14px) */
+    background-color: #f9fafb;
+    border: 1.5px solid #e5e8eb;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333d4b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    margin-bottom: 10px; /* 하단 간격 축소 (20px -> 10px) */
+}
+
+/* 4. 결제 버튼 & 닫기 버튼 타이트 배치 */
+#payment-button {
+    width: 100%;
+    background-color: #0051ff;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px; /* 버튼 높이 축소 (16px -> 14px) */
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 81, 255, 0.2);
+    margin-top: 10px !important; /* 상단 여백 축소 */
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+

@@ -1,10 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
 	<meta charset="UTF-8">
-	<title>Title</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>토스페이먼츠 연동 테스트</title>
+	<link rel="stylesheet" href="css/home.css" type="text/css" />
+	
+	<!-- 💡 토스페이먼츠 SDK v2 로드 -->
+	<script src="https://js.tosspayments.com/v2/standard"></script>
 </head>
 <body>
-<h1>home</h1>
+
+<div class="card-container">
+	<div class="brand-title">💳 결제 시스템 테스트</div>
+	<div class="sub-title">토스페이먼츠 안전 결제 연동</div>
+	
+	<div class="product-info">
+		<div class="product-name">테스트 상품 (개발자 훈련 패키지)</div>
+		<div class="product-price">50,000원</div>
+	</div>
+	
+	<button class="toss-btn" onclick="openModal()">
+		<span>토스페이먼츠로 결제하기</span>
+	</button>
+	
+	<div class="footer-note">테스트 가맹점 환경에서 안전하게 진행됩니다.</div>
+</div>
+
+<!-- 모달 영역 -->
+<div id="checkoutModal" class="modal-overlay">
+	<div class="modal-content">
+		<div id="modalContentArea"></div>
+		<button class="close-btn" onclick="closeModal()" style="margin-top: 10px;">닫기</button>
+	</div>
+</div>
+
+<script>
+    let widgets = null; // 토스 위젯 객체 재사용을 위한 변수
+
+    async function openModal() {
+        const modalOverlay = document.getElementById('checkoutModal');
+        const modalBody = document.getElementById('modalContentArea');
+
+        try {
+            // 1. widget/checkout.html 동적 로드
+            const response = await fetch('/widget/checkout.html');
+            if (!response.ok) throw new Error('checkout.html 로딩 실패');
+
+            const htmlText = await response.text();
+            modalBody.innerHTML = htmlText;
+            modalOverlay.style.display = 'flex';
+
+            // 2. 모달이 열리고 HTML이 주입된 직후 토스 위젯 초기화 및 렌더링
+            await initTossWidget();
+
+        } catch (error) {
+            console.error("❌ 모달 로딩 에러:", error);
+            alert("결제 화면을 불러올 수 없습니다.");
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('checkoutModal').style.display = 'none';
+    }
+
+    // 💡 토스 결제 위젯 초기화 및 이벤트 연결 함수
+    async function initTossWidget() {
+        const clientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+        const customerKey = "jl2qwz5DhHqQ4ZK2H_MRi";
+
+        const tossPayments = TossPayments(clientKey);
+        widgets = tossPayments.widgets({ customerKey });
+
+        // 결제 금액 설정
+        await widgets.setAmount({
+            currency: "KRW",
+            value: 50000,
+        });
+
+        // UI 렌더링
+        await Promise.all([
+            widgets.renderPaymentMethods({
+                selector: "#payment-method",
+                variantKey: "DEFAULT",
+            }),
+            widgets.renderAgreement({
+                selector: "#agreement",
+                variantKey: "AGREEMENT"
+            }),
+        ]);
+
+        // 쿠폰 체크박스 이벤트 연결
+        const coupon = document.getElementById("coupon-box");
+        if (coupon) {
+            coupon.addEventListener("change", async function () {
+                if (coupon.checked) {
+                    await widgets.setAmount({ currency: "KRW", value: 45000 });
+                } else {
+                    await widgets.setAmount({ currency: "KRW", value: 50000 });
+                }
+            });
+        }
+
+        // 결제하기 버튼 이벤트 연결
+        const button = document.getElementById("payment-button");
+        if (button) {
+            button.addEventListener("click", async function () {
+                await widgets.requestPayment({
+                    orderId: "order_" + new Date().getTime(), // 동적 주문번호 생성
+                    orderName: "테스트 상품 (개발자 훈련 패키지)",
+                    successUrl: window.location.origin + "/success.html",
+                    failUrl: window.location.origin + "/fail.html",
+                    customerEmail: "customer123@gmail.com",
+                    customerName: "김토스",
+                    customerMobilePhone: "01012341234",
+                });
+            });
+        }
+    }
+</script>
+
 </body>
 </html>
