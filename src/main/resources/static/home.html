@@ -104,10 +104,11 @@
 
         // 결제하기 버튼 이벤트 연결
         const button = document.getElementById("payment-button");
+        const randomOrderId = crypto.randomUUID();
         if (button) {
             button.addEventListener("click", async function () {
                 await widgets.requestPayment({
-                    orderId: "s96WYXNbFn4YO3akBh6xf",
+                    orderId: randomOrderId,
                     orderName: "토스 티셔츠 외 2건",
                     successUrl: window.location.origin + "/widget/success.html",
                     failUrl: window.location.origin + "/fail.html",
