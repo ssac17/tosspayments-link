@@ -107,9 +107,9 @@
         if (button) {
             button.addEventListener("click", async function () {
                 await widgets.requestPayment({
-                    orderId: "order_" + new Date().getTime(), // 동적 주문번호 생성
-                    orderName: "테스트 상품 (개발자 훈련 패키지)",
-                    successUrl: window.location.origin + "/success.html",
+                    orderId: "s96WYXNbFn4YO3akBh6xf",
+                    orderName: "토스 티셔츠 외 2건",
+                    successUrl: window.location.origin + "/widget/success.html",
                     failUrl: window.location.origin + "/fail.html",
                     customerEmail: "customer123@gmail.com",
                     customerName: "김토스",
