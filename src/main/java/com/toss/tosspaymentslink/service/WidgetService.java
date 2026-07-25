@@ -1,6 +1,9 @@
 package com.toss.tosspaymentslink.service;
 
-import lombok.Data;
+import com.toss.tosspaymentslink.entity.Payment;
+import com.toss.tosspaymentslink.entity.PaymentStatus;
+import com.toss.tosspaymentslink.repository.WidgetRepository;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -12,14 +15,22 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 
 @Slf4j
 @Service
+@Transactional
 public class WidgetService {
 
     @Value("${widget.secret.key}")
     private String WIDGET_SECRET_KEY;
+
+    private final WidgetRepository widgetRepository;
+
+    public WidgetService(WidgetRepository widgetRepository) {
+        this.widgetRepository = widgetRepository;
+    }
 
     public JSONObject payment(String jsonBody) {
         JSONObject requestObj = jsonParseObject(jsonBody);
@@ -60,6 +71,8 @@ public class WidgetService {
                     log.warn("결제 승인 실패: {}", responseJson);
                 }
                 // API 응답 객체를 반환하도록 수정 (기존엔 null 반환)
+                log.info("responseJson: {}", responseJson);
+                saveResponse(responseJson);
                 return responseJson;
             }
 
@@ -89,5 +102,40 @@ public class WidgetService {
             log.error("JSON 파싱 중 오류 발생", e);
             return null; // 오류 시 명시적으로 null 반환
         }
+    }
+
+    private void saveResponse(JSONObject responseJson) {
+        String orderId = responseJson.get("orderId").toString();
+        String paymentKey = responseJson.get("paymentKey").toString();
+        int totalAmount = ((Number)responseJson.get("totalAmount")).intValue();
+        String method = (String) responseJson.get("method");
+        PaymentStatus status = PaymentStatus.valueOf((String) responseJson.get("status"));
+        String orderName =  (String) responseJson.get("orderName");
+        String requestedAtStr = (String) responseJson.get("requestedAt");
+        OffsetDateTime requestedAt = OffsetDateTime.parse(requestedAtStr);
+        String approvedAtStr = (String) responseJson.get("approvedAt");
+        OffsetDateTime approvedAt = OffsetDateTime.parse(approvedAtStr);
+
+        String receiptUrl = null;
+        JSONObject receiptObj = (JSONObject) responseJson.get("receipt");
+        if (receiptObj != null) {
+            receiptUrl = (String) receiptObj.get("url");
+        }
+        String cardInfo =  (String) responseJson.get("card");
+
+
+        Payment newOrder = Payment.builder()
+                .orderId(orderId)
+                .paymentKey(paymentKey)
+                .totalAmount(totalAmount)
+                .method(method)
+                .status(status)
+                .orderName(orderName)
+                .requestedAt(requestedAt)
+                .approvedAt(approvedAt)
+                .receiptUrl(receiptUrl)
+                .cardInfo(cardInfo)
+                .build();
+        widgetRepository.save(newOrder);
     }
 }

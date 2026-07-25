@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Setter @Getter @Builder @ToString
@@ -21,8 +22,8 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status; // 결제 상태
     private String orderName; // 주문 내용
-    private LocalDateTime requestedAt; // 결제 요청 시간
-    private LocalDateTime approvedAt; // 결제 승인 시간
+    private OffsetDateTime requestedAt; // 결제 요청 시간
+    private OffsetDateTime approvedAt; // 결제 승인 시간
     private String receiptUrl; //매출 전표 url
     private long transferBankCode; //은행
     private String cardInfo; //카드 정보
