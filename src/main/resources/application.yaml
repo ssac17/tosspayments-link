@@ -2,7 +2,22 @@ spring:
   application:
     name: tosspayments-link
 
+  # 💡 database/jpa 설정은 spring: 계층 바로 밑에 있어야 스프링이 자동 인식합니다!
+  datasource:
+    url: jdbc:mysql://localhost:3306/tosspayments?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    password: "1234"
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+
+# 💡 직접 정의하신 시크릿 키는 이렇게 커스텀 키로 보관하시면 됩니다!
 widget:
   secret:
     key: "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6"

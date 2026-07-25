@@ -28,7 +28,6 @@ public class WidgetService {
             return null;
         }
 
-        // Base64 인코딩 처리 간소화
         String authorizations = "Basic " + Base64.getEncoder()
                 .encodeToString((WIDGET_SECRET_KEY + ":").getBytes(StandardCharsets.UTF_8));
 
