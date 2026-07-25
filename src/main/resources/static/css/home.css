@@ -121,9 +121,9 @@ body {
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 
-    /* 💡 스크롤 제거 핵심: 스크롤바 숨기고 최대 높이 맞춤 */
+    /* 💡 동적 콘텐츠에 맞게 높이 자동 조정 & 스크롤 활성화 */
     max-height: 90vh;
-    overflow: hidden; /* 스크롤바 완전히 숨김 */
+    overflow-y: auto; /* 콘텐츠가 넘칠 때만 수직 스크롤 표시 */
 
     display: flex;
     flex-direction: column;
