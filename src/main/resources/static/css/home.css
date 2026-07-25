@@ -287,4 +287,39 @@ body {
     margin-top: 10px !important; /* 상단 여백 축소 */
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
+.header-bar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+}
 
+.mypage-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background-color: #ffffff;
+    color: #333d4b;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #e5e8eb;
+    border-radius: 20px;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease-in-out;
+}
+
+.mypage-btn:hover {
+    background-color: #f2f4f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #3182f6; /* 토스 시그니처 블루 색상 */
+    border-color: #b0d0ff;
+}
+
+.mypage-btn .icon {
+    font-size: 16px;
+}

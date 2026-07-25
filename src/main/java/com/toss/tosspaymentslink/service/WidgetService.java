@@ -79,7 +79,6 @@ public class WidgetService {
         } catch (IOException | ParseException e) {
             log.error("결제 승인 API 호출 중 오류 발생", e);
         }
-
         return null;
     }
 
