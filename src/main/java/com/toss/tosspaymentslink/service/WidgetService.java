@@ -9,6 +9,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -71,7 +73,6 @@ public class WidgetService {
                     log.warn("결제 승인 실패: {}", responseJson);
                 }
                 // API 응답 객체를 반환하도록 수정 (기존엔 null 반환)
-                log.info("responseJson: {}", responseJson);
                 saveResponse(responseJson);
                 return responseJson;
             }
@@ -80,6 +81,10 @@ public class WidgetService {
             log.error("결제 승인 API 호출 중 오류 발생", e);
         }
         return null;
+    }
+
+    public List<Payment> getPayments() {
+        return widgetRepository.findAll(Sort.by(Sort.Direction.DESC, "approvedAt"));
     }
 
     private JSONObject jsonParseObject(String jsonBody) {
@@ -120,9 +125,13 @@ public class WidgetService {
         if (receiptObj != null) {
             receiptUrl = (String) receiptObj.get("url");
         }
-        String cardInfo =  (String) responseJson.get("card");
-
-
+        String cardInfo = null;
+        JSONObject card = (JSONObject) responseJson.get("card");
+        if(card != null) {
+            String ownerType = (String) card.get("ownerType");
+            String cardNumber = card.get("number").toString();
+            cardInfo = ownerType.concat("_").concat(cardNumber);
+        }
         Payment newOrder = Payment.builder()
                 .orderId(orderId)
                 .paymentKey(paymentKey)
