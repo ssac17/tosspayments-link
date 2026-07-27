@@ -10,6 +10,9 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -85,10 +88,9 @@ public class WidgetService {
         return null;
     }
 
-    public List<PaymentResponseDto> getPayments() {
-        return widgetRepository.findAll(Sort.by(Sort.Direction.DESC, "approvedAt")).stream()
-                .map(PaymentResponseDto::from)
-                .toList();
+    public Page<PaymentResponseDto> getPayments(Pageable pageable) {
+        Page<Payment> paymentPage = widgetRepository.findAll(pageable);
+        return paymentPage.map(PaymentResponseDto::from);
 
         //return widgetRepository.findAll(Sort.by(Sort.Direction.DESC, "approvedAt"));
     }
