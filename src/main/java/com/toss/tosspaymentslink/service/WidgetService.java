@@ -3,6 +3,8 @@ package com.toss.tosspaymentslink.service;
 import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.entity.Payment;
 import com.toss.tosspaymentslink.entity.PaymentStatus;
+import com.toss.tosspaymentslink.entity.Product;
+import com.toss.tosspaymentslink.repository.ProductRepository;
 import com.toss.tosspaymentslink.repository.WidgetRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -34,16 +36,27 @@ public class WidgetService {
     private String WIDGET_SECRET_KEY;
 
     private final WidgetRepository widgetRepository;
+    private final ProductRepository productRepository;
 
-    public WidgetService(WidgetRepository widgetRepository) {
+    public WidgetService(WidgetRepository widgetRepository, ProductRepository productRepository) {
         this.widgetRepository = widgetRepository;
+        this.productRepository = productRepository;
     }
 
     public JSONObject payment(String jsonBody) {
         JSONObject requestObj = jsonParseObject(jsonBody);
         if (requestObj == null) {
             log.error("요청 JSON 파싱에 실패했습니다.");
-            return null;
+            throw new IllegalArgumentException("잘못된 요청 형식입니다.");
+        }
+        log.info("requestObj: {}", requestObj);
+
+        boolean isValidProduct = verifyProductInfo(requestObj);
+        if(!isValidProduct){
+            JSONObject failResponse = new JSONObject();
+            failResponse.put("code", "INVALID_PRODUCT");
+            failResponse.put("message", "상품 정보 또는 결제 금액이 일치하지 않습니다.");
+            return failResponse;
         }
 
         String authorizations = "Basic " + Base64.getEncoder()
@@ -64,6 +77,7 @@ public class WidgetService {
 
             int code = connection.getResponseCode();
             boolean isSuccess = code == 200;
+            //todo: 결제 성고시 재고 차감
 
             // 2. try-with-resources를 통한 안전한 InputStream 및 Reader 자원 해제
             try (InputStream responseStream = isSuccess ? connection.getInputStream() : connection.getErrorStream();
@@ -74,6 +88,7 @@ public class WidgetService {
 
                 if (isSuccess) {
                     log.info("결제 승인 성공: {}", responseJson);
+
                 } else {
                     log.warn("결제 승인 실패: {}", responseJson);
                 }
@@ -94,17 +109,17 @@ public class WidgetService {
     }
 
     private JSONObject jsonParseObject(String jsonBody) {
-        log.info("jsonBody: {}", jsonBody);
         JSONParser jsonParser = new JSONParser();
 
         try {
             JSONObject jsonObject = (JSONObject) jsonParser.parse(jsonBody);
 
-            // 토스 결제 승인 API에 꼭 필요한 3가지 데이터만 추출
             JSONObject obj = new JSONObject();
             obj.put("paymentKey", jsonObject.get("paymentKey"));
             obj.put("orderId", jsonObject.get("orderId"));
             obj.put("amount", jsonObject.get("amount"));
+            obj.put("productId", jsonObject.get("productId"));
+            obj.put("name", jsonObject.get("name"));
 
             return obj; // 기존 jsonObject 대신 정제된 obj 반환
 
@@ -138,5 +153,24 @@ public class WidgetService {
                 .receiptUrl(receiptUrl)
                 .cardInfo(cardInfo)
                 .build());
+    }
+
+    private boolean verifyProductInfo(JSONObject requestObj) {
+        Long productId = Long.parseLong(requestObj.get("productId").toString());
+        String productName = requestObj.get("name").toString();
+        long amount = Long.parseLong(requestObj.get("amount").toString());
+        Product findProduct = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 상품입니다." + productId));
+
+        if(!findProduct.getName().equals(productName)) {
+            log.error("💥 상품명 불일치! DB: {}, 요청: {}", findProduct.getName(), productName);
+            throw new IllegalArgumentException("상품 정보가 일치하지 않습니다.");
+        }
+        if (findProduct.getPrice() != amount) {
+            log.error("결제 금액이 맞지 않습니다! DB: {}, 요청: {}", findProduct.getPrice(), amount);
+            throw new IllegalArgumentException("결제 금액이 일치하지 않습니다.");
+        }
+        log.info("✅ 상품 검증 완료 - 상품명: {}, 금액: {}원", findProduct.getName(), findProduct.getPrice());
+        return true;
     }
 }

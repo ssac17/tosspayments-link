@@ -40,6 +40,9 @@
     const paymentKey = urlParams.get("paymentKey");
     const orderId = urlParams.get("orderId");
     const amount = urlParams.get("amount");
+    const name = urlParams.get("name");
+    const productId = urlParams.get("productId");
+    
 
     // 화면 데이터 미리 세팅
     document.getElementById("orderId").textContent = orderId || '-';
@@ -51,6 +54,8 @@
             paymentKey: paymentKey,
             orderId: orderId,
             amount: amount,
+	        name: name,
+	        productId: productId
         };
 
         try {

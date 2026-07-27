@@ -85,36 +85,36 @@
     }
 
     // 💡 상품 카드 HTML 생성
+    // 💡 상품 카드 HTML 생성 (인자는 productId, productName, amount 딱 3개만 전달)
     function renderProductCard(product) {
         const imgUrl = product.imageUrl ? product.imageUrl : 'https://placehold.co/400x400?text=No+Image';
         const formattedPrice = Number(product.price).toLocaleString();
 
         return `
-            <div class="product-card">
-                <div class="product-img-wrapper">
-                    <img src="${imgUrl}" alt="${escapeHtml(product.name)}" class="product-img"
-                         onerror="this.src='https://placehold.co/400x400?text=No+Image'">
-                </div>
-                <div class="product-info">
-                    <div>
-                        <div class="product-name">${escapeHtml(product.name)}</div>
-                        <div class="product-meta">
-                            <span class="product-price">${formattedPrice}원</span>
-                            <span class="product-stock">재고 ${product.stockQuantity}개</span>
-                        </div>
-                    </div>
-                    <button class="btn-buy" onclick="openPaymentModal(${product.id}, '${escapeJsStr(product.name)}', ${product.price})">
-                        구매하기
-                    </button>
-                </div>
+        <div class="product-card">
+            <div class="product-img-wrapper">
+                <img src="${imgUrl}" alt="${escapeHtml(product.name)}" class="product-img"
+                     onerror="this.src='https://placehold.co/400x400?text=No+Image'">
             </div>
-        `;
+            <div class="product-info">
+                <div>
+                    <div class="product-name">${escapeHtml(product.name)}</div>
+                    <div class="product-meta">
+                        <span class="product-price">${formattedPrice}원</span>
+                        <span class="product-stock">재고 ${product.stockQuantity}개</span>
+                    </div>
+                </div>
+                <button class="btn-buy" onclick="openPaymentModal(${product.id}, '${escapeJsStr(product.name)}', ${product.price})">
+                    구매하기
+                </button>
+            </div>
+        </div>
+    `;
     }
-
     // 💡 1. [구매하기] 클릭 시 결제위젯 모달 띄우기
     function openPaymentModal(productId, productName, amount) {
-        selectedProductId = productId;
-        selectedAmount = amount;
+        selectedProductId = productId; // 👈 선택한 상품 ID 저장
+        selectedAmount = amount;       // 👈 선택한 상품 가격 저장
 
         document.getElementById("modalProductName").innerText = productName;
         document.getElementById("modalProductPrice").innerText = Number(amount).toLocaleString() + "원";
@@ -127,33 +127,31 @@
         document.getElementById("payment-method").innerHTML = "";
         document.getElementById("agreement").innerHTML = "";
 
-        // 결제 수단 영역 렌더링
         paymentMethodsWidget = paymentWidget.renderPaymentMethods(
             "#payment-method",
             { value: amount },
             { variantKey: "DEFAULT" }
         );
 
-        // 이용약관 영역 렌더링
         paymentWidget.renderAgreement(
             "#agreement",
             { variantKey: "AGREEMENT" }
         );
 
-        // 결제 버튼 이벤트 연결
+        // 결제 버튼 클릭 시 requestWidgetPayment 호출
         const paymentButton = document.getElementById("payment-button");
-        paymentButton.onclick = () => requestWidgetPayment(productName);
+        paymentButton.onclick = () => requestWidgetPayment(productName, selectedProductId);
     }
 
-    // 💡 2. 모달 안의 [결제하기] 버튼 클릭 시 토스 결제 요청
-    function requestWidgetPayment(productName) {
+    // 💡 2. [결제하기] 클릭 시 토스 결제 요청
+    function requestWidgetPayment(productName, productId) {
         const orderId = "ORDER_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-
         paymentWidget.requestPayment({
             orderId: orderId,
             orderName: productName,
-            successUrl: window.location.origin + `/widget/success.html?productId=${selectedProductId}`,
-            failUrl: window.location.origin + "/fail.html",
+            // 🌟 핵심: successUrl 파라미터로 productId를 확실하게 전달!
+            successUrl: window.location.origin + `/widget/success.html?productId=${productId}&name=${productName}`,
+            failUrl: window.location.origin + "/widget/fail.html",
             customerEmail: "customer@example.com",
             customerName: "HongGilDong"
         }).catch(error => {
@@ -163,7 +161,7 @@
                 alert(`결제 오류: ${error.message}`);
             }
         });
-    }
+    }ㄹ
 
     // 💡 모달 닫기
     function closeModal() {
