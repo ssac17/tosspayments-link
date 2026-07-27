@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -115,23 +116,11 @@ public class WidgetService {
         String method = (String) responseJson.get("method");
         PaymentStatus status = PaymentStatus.valueOf((String) responseJson.get("status"));
         String orderName =  (String) responseJson.get("orderName");
-        String requestedAtStr = (String) responseJson.get("requestedAt");
-        OffsetDateTime requestedAt = OffsetDateTime.parse(requestedAtStr);
-        String approvedAtStr = (String) responseJson.get("approvedAt");
-        OffsetDateTime approvedAt = OffsetDateTime.parse(approvedAtStr);
+        OffsetDateTime requestedAt = Optional.ofNullable((String)responseJson.get("requestedAt")).map(OffsetDateTime::parse).orElse(null);
+        OffsetDateTime approvedAt = Optional.ofNullable((String) responseJson.get("approvedAt")).map(OffsetDateTime::parse).orElse(null);
+        String receiptUrl = (String) Optional.ofNullable((JSONObject)responseJson.get("receipt")).map(receipt -> receipt.get("url")).orElse(null);
+        String cardInfo = Optional.ofNullable((JSONObject) responseJson.get("card")).map(card -> String.format("%s_%s", card.get("ownerType"), card.get("number"))).orElse(null);
 
-        String receiptUrl = null;
-        JSONObject receiptObj = (JSONObject) responseJson.get("receipt");
-        if (receiptObj != null) {
-            receiptUrl = (String) receiptObj.get("url");
-        }
-        String cardInfo = null;
-        JSONObject card = (JSONObject) responseJson.get("card");
-        if(card != null) {
-            String ownerType = (String) card.get("ownerType");
-            String cardNumber = card.get("number").toString();
-            cardInfo = ownerType.concat("_").concat(cardNumber);
-        }
         Payment newOrder = Payment.builder()
                 .orderId(orderId)
                 .paymentKey(paymentKey)

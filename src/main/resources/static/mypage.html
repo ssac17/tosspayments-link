@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>마이페이지 - 내 결제 내역</title>
-	<link rel="stylesheet" href="css/mypage.css" type="text/css" />
+	<link rel="stylesheet" href="/css/mypage.css" type="text/css" />
 </head>
 <body>
 
@@ -41,12 +41,12 @@
 
         try {
             const response = await fetch("/api/payments");
-            if (!response.ok) throw new Error("결제 내역 조회 실패");
+            if (!response.ok) throw new Error(`HTTP 에러! 상태: ${response.status}`);
 
             const payments = await response.json();
             countBadge.textContent = `${payments.length}건`;
 
-            if (payments.length === 0) {
+            if (!payments || payments.length === 0) {
                 listContainer.innerHTML = `<div class="empty-state">아직 결제 내역이 없습니다.</div>`;
                 return;
             }
@@ -60,42 +60,56 @@
     }
 
     function renderPaymentCard(payment) {
-        // 날짜 포맷팅 (YYYY-MM-DD HH:mm)
+        // 💡 1. 날짜 안전 파싱
         const dateStr = payment.approvedAt
-            ? new Date(payment.approvedAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })
+            ? new Date(payment.approvedAt).toLocaleString("ko-KR", {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            })
             : "시간 정보 없음";
 
-        // 상태값 한글 변환
-        const isDone = payment.status === 'DONE';
-        const statusText = isDone ? '결제 완료' : payment.status;
-        const statusClass = isDone ? 'status-done' : 'status-cancel';
+        // 💡 2. 결제 상태 텍스트 & CSS 클래스 분기
+        const statusMap = {
+            'DONE': { text: '결제 완료', className: 'status-done' },
+            'CANCELED': { text: '결제 취소', className: 'status-cancel' },
+            'ABORTED': { text: '결제 실패', className: 'status-cancel' },
+            'READY': { text: '결제 대기', className: 'status-ready' }
+        };
+
+        const currentStatus = statusMap[payment.status] || { text: payment.status || '상태 없음', className: '' };
+
+        // 💡 3. 안전한 문자열 처리 (XSS 방지 및 기본값 지정)
+        const orderName = escapeHtml(payment.orderName || '상품 정보 없음');
+        const orderId = escapeHtml(payment.orderId || '-');
+        const method = escapeHtml(payment.method || '미지정');
+        const cardInfo = payment.cardInfo ? `(${escapeHtml(payment.cardInfo)})` : '';
 
         return `
             <div class="payment-card">
                 <div class="card-header">
                     <span class="order-date">${dateStr}</span>
-                    <span class="status-tag ${statusClass}">${statusText}</span>
+                    <span class="status-tag ${currentStatus.className}">${currentStatus.text}</span>
                 </div>
                 
                 <div class="card-body">
                     <div class="item-info">
-                        <div class="order-name">${payment.orderName || '상품 정보 없음'}</div>
-                        <div class="order-id">주문번호: ${payment.orderId}</div>
+                        <div class="order-name">${orderName}</div>
+                        <div class="order-id">주문번호: ${orderId}</div>
                     </div>
                     <div class="amount-info">
-                        <span class="amount">${Number(payment.totalAmount).toLocaleString()}</span>원
+                        <span class="amount">${Number(payment.totalAmount || 0).toLocaleString()}</span>원
                     </div>
                 </div>
 
                 <div class="card-footer">
                     <div class="pay-method">
-                        <span>결제 수단: <strong>${payment.method || '미지정'}</strong></span>
-                        ${payment.cardInfo ? `<span class="card-detail">(${payment.cardInfo})</span>` : ''}
+                        <span>결제 수단: <strong>${method}</strong></span>
+                        ${cardInfo ? `<span class="card-detail">${cardInfo}</span>` : ''}
                     </div>
                     
                     <div class="btn-group">
                         ${payment.receiptUrl ? `
-                            <a href="${payment.receiptUrl}" target="_blank" class="btn btn-receipt">
+                            <a href="${payment.receiptUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-receipt">
                                 🧾 영수증
                             </a>
                         ` : ''}
