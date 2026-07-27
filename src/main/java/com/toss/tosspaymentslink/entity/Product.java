@@ -12,7 +12,6 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name; //상품명
     private int price; //가격
     private int stockQuantity; //재고 수량
