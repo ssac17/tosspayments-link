@@ -1,5 +1,6 @@
 package com.toss.tosspaymentslink.service;
 
+import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.entity.Payment;
 import com.toss.tosspaymentslink.entity.PaymentStatus;
 import com.toss.tosspaymentslink.repository.WidgetRepository;
@@ -84,8 +85,12 @@ public class WidgetService {
         return null;
     }
 
-    public List<Payment> getPayments() {
-        return widgetRepository.findAll(Sort.by(Sort.Direction.DESC, "approvedAt"));
+    public List<PaymentResponseDto> getPayments() {
+        return widgetRepository.findAll(Sort.by(Sort.Direction.DESC, "approvedAt")).stream()
+                .map(PaymentResponseDto::from)
+                .toList();
+
+        //return widgetRepository.findAll(Sort.by(Sort.Direction.DESC, "approvedAt"));
     }
 
     private JSONObject jsonParseObject(String jsonBody) {
