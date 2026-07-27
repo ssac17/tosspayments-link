@@ -5,45 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>마이페이지 - 내 결제 내역</title>
 	<link rel="stylesheet" href="/css/mypage.css" type="text/css" />
-	<style>
-        /* 페이지네이션 버튼 스타일 추가 */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin-top: 24px;
-        }
-
-        .page-btn {
-            padding: 8px 14px;
-            border: 1px solid #d1d6db;
-            background-color: #ffffff;
-            color: #4e5968;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .page-btn:hover:not(:disabled) {
-            background-color: #f2f4f6;
-            color: #191f28;
-        }
-
-        .page-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .page-info {
-            font-size: 14px;
-            color: #8b95a1;
-            font-weight: 500;
-            padding: 0 8px;
-        }
-	</style>
 </head>
 <body>
 
@@ -66,94 +27,42 @@
 			<!-- 자바스크립트로 동적 생성됨 -->
 			<div class="empty-state">결제 내역을 불러오는 중...</div>
 		</div>
-		
-		<!-- 💡 페이징 컨트롤 버튼 영역 -->
-		<div id="pagination" class="pagination" style="display: none;">
-			<button id="prevBtn" class="page-btn" onclick="changePage(-1)">이전</button>
-			<span id="pageInfo" class="page-info">1 / 1</span>
-			<button id="nextBtn" class="page-btn" onclick="changePage(1)">다음</button>
-		</div>
 	</main>
 </div>
 
 <script>
-    // 현재 상태를 관리하는 변수 (백엔드는 0페이지부터 시작)
-    let currentPage = 0;
-    let totalPages = 1;
-
     document.addEventListener("DOMContentLoaded", () => {
-        loadPayments(currentPage);
+        loadPayments();
     });
 
-    async function loadPayments(page) {
+    async function loadPayments() {
         const listContainer = document.getElementById("paymentList");
         const countBadge = document.getElementById("paymentCount");
-        const paginationContainer = document.getElementById("pagination");
 
         try {
-            // 백엔드로 현재 페이지 번호 전송 (백엔드 기본 size 사용)
-            const response = await fetch(`/api/payments?page=${page}`);
+            const response = await fetch("/api/payments");
             if (!response.ok) throw new Error(`HTTP 에러! 상태: ${response.status}`);
 
-            // 💡 Page<PaymentResponseDto> JSON 응답 수신
             const data = await response.json();
+            const payments = data.content;
+            
+            countBadge.textContent = `${payments.length}건`;
 
-            // Page 객체 주요 데이터 추출
-            const payments = data.content || [];
-            totalPages = data.totalPages || 1;
-            currentPage = data.number; // 현재 페이지 (0부터 시작)
-            const totalElements = data.totalElements || 0;
-
-            // 총 건수 표시
-            countBadge.textContent = `${totalElements}건`;
-
-            // 데이터가 없을 때
-            if (payments.length === 0) {
+            if (!payments || payments.length === 0) {
                 listContainer.innerHTML = `<div class="empty-state">아직 결제 내역이 없습니다.</div>`;
-                paginationContainer.style.display = "none";
                 return;
             }
 
-            // 카드 리스트 그려주기
             listContainer.innerHTML = payments.map(payment => renderPaymentCard(payment)).join('');
-
-            // 페이징 버튼 상태 업데이트
-            updatePaginationUI(data.first, data.last);
 
         } catch (error) {
             console.error("❌ 에러 발생:", error);
             listContainer.innerHTML = `<div class="empty-state error">결제 내역을 불러오는 중 오류가 발생했습니다.</div>`;
-            paginationContainer.style.display = "none";
         }
-    }
-
-    // 💡 페이지 이동 함수
-    function changePage(delta) {
-        const targetPage = currentPage + delta;
-        if (targetPage >= 0 && targetPage < totalPages) {
-            currentPage = targetPage;
-            loadPayments(currentPage);
-        }
-    }
-
-    // 💡 페이징 버튼 상태 UI 업데이트
-    function updatePaginationUI(isFirst, isLast) {
-        const paginationContainer = document.getElementById("pagination");
-        const prevBtn = document.getElementById("prevBtn");
-        const nextBtn = document.getElementById("nextBtn");
-        const pageInfo = document.getElementById("pageInfo");
-
-        paginationContainer.style.display = "flex";
-
-        // 버튼 활성화/비활성화 (0페이지면 '이전' 비활성화, 마지막 페이지면 '다음' 비활성화)
-        prevBtn.disabled = isFirst;
-        nextBtn.disabled = isLast;
-
-        // UI에 보여줄 때는 1페이지부터 표현 (+1)
-        pageInfo.textContent = `${currentPage + 1} / ${totalPages}`;
     }
 
     function renderPaymentCard(payment) {
+        // 1. 날짜 안전 파싱
         const dateStr = payment.approvedAt
             ? new Date(payment.approvedAt).toLocaleString("ko-KR", {
                 year: 'numeric', month: '2-digit', day: '2-digit',
@@ -161,6 +70,7 @@
             })
             : "시간 정보 없음";
 
+        // 2. 결제 상태 텍스트 & CSS 클래스 분기
         const statusMap = {
             'DONE': { text: '결제 완료', className: 'status-done' },
             'CANCELED': { text: '결제 취소', className: 'status-cancel' },
@@ -170,6 +80,7 @@
 
         const currentStatus = statusMap[payment.status] || { text: payment.status || '상태 없음', className: '' };
 
+        // 3. 안전한 문자열 처리 (XSS 방지)
         const orderName = escapeHtml(payment.orderName || '상품 정보 없음');
         const orderId = escapeHtml(payment.orderId || '-');
         const method = escapeHtml(payment.method || '미지정');
@@ -210,6 +121,7 @@
         `;
     }
 
+    // 💡 누락되었던 XSS 방지 escapeHtml 함수 추가!
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)

@@ -91,8 +91,6 @@ public class WidgetService {
     public Page<PaymentResponseDto> getPayments(Pageable pageable) {
         Page<Payment> paymentPage = widgetRepository.findAll(pageable);
         return paymentPage.map(PaymentResponseDto::from);
-
-        //return widgetRepository.findAll(Sort.by(Sort.Direction.DESC, "approvedAt"));
     }
 
     private JSONObject jsonParseObject(String jsonBody) {
