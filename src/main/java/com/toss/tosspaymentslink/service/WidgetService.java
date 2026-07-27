@@ -121,7 +121,7 @@ public class WidgetService {
         String receiptUrl = (String) Optional.ofNullable((JSONObject)responseJson.get("receipt")).map(receipt -> receipt.get("url")).orElse(null);
         String cardInfo = Optional.ofNullable((JSONObject) responseJson.get("card")).map(card -> String.format("%s_%s", card.get("ownerType"), card.get("number"))).orElse(null);
 
-        Payment newOrder = Payment.builder()
+        widgetRepository.save(Payment.builder()
                 .orderId(orderId)
                 .paymentKey(paymentKey)
                 .totalAmount(totalAmount)
@@ -132,7 +132,6 @@ public class WidgetService {
                 .approvedAt(approvedAt)
                 .receiptUrl(receiptUrl)
                 .cardInfo(cardInfo)
-                .build();
-        widgetRepository.save(newOrder);
+                .build());
     }
 }
