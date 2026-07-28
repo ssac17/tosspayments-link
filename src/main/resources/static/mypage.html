@@ -27,42 +27,58 @@
 			<!-- 자바스크립트로 동적 생성됨 -->
 			<div class="empty-state">결제 내역을 불러오는 중...</div>
 		</div>
+		
+		<!-- 💡 추가: 페이지네이션 버튼 영역 -->
+		<div id="pagination" class="pagination"></div>
 	</main>
 </div>
 
 <script>
+    // 💡 현재 페이지 상태 관리 (0부터 시작)
+    let currentPage = 0;
+    const pageSize = 5; // 한 페이지에 보여줄 개수
+
     document.addEventListener("DOMContentLoaded", () => {
-        loadPayments();
+        loadPayments(currentPage);
     });
 
-    async function loadPayments() {
+    async function loadPayments(page) {
+        currentPage = page;
         const listContainer = document.getElementById("paymentList");
         const countBadge = document.getElementById("paymentCount");
+        const paginationContainer = document.getElementById("pagination");
 
         try {
-            const response = await fetch("/api/payments");
+            // 💡 page와 size 파라미터를 넘겨서 호출
+            const response = await fetch(`/api/payments?page=${page}&size=${pageSize}`);
             if (!response.ok) throw new Error(`HTTP 에러! 상태: ${response.status}`);
 
-            const data = await response.json();
-            const payments = data.content;
-            
-            countBadge.textContent = `${payments.length}건`;
+            const data = await response.json(); // PageImpl 객체 구조
+            const payments = data.content || [];
 
-            if (!payments || payments.length === 0) {
+            // 전체 건수 표시 (data.totalElements)
+            countBadge.textContent = `${data.totalElements || 0}건`;
+
+            if (payments.length === 0) {
                 listContainer.innerHTML = `<div class="empty-state">아직 결제 내역이 없습니다.</div>`;
+                paginationContainer.innerHTML = '';
                 return;
             }
 
+            // 1. 카드 리스트 렌더링
             listContainer.innerHTML = payments.map(payment => renderPaymentCard(payment)).join('');
+
+            // 2. 💡 페이지네이션 버튼 렌더링
+            renderPagination(data.totalPages, data.number);
 
         } catch (error) {
             console.error("❌ 에러 발생:", error);
             listContainer.innerHTML = `<div class="empty-state error">결제 내역을 불러오는 중 오류가 발생했습니다.</div>`;
+            paginationContainer.innerHTML = '';
         }
     }
 
     function renderPaymentCard(payment) {
-        // 1. 날짜 안전 파싱
         const dateStr = payment.approvedAt
             ? new Date(payment.approvedAt).toLocaleString("ko-KR", {
                 year: 'numeric', month: '2-digit', day: '2-digit',
@@ -70,7 +86,6 @@
             })
             : "시간 정보 없음";
 
-        // 2. 결제 상태 텍스트 & CSS 클래스 분기
         const statusMap = {
             'DONE': { text: '결제 완료', className: 'status-done' },
             'CANCELED': { text: '결제 취소', className: 'status-cancel' },
@@ -80,7 +95,6 @@
 
         const currentStatus = statusMap[payment.status] || { text: payment.status || '상태 없음', className: '' };
 
-        // 3. 안전한 문자열 처리 (XSS 방지)
         const orderName = escapeHtml(payment.orderName || '상품 정보 없음');
         const orderId = escapeHtml(payment.orderId || '-');
         const method = escapeHtml(payment.method || '미지정');
@@ -121,7 +135,33 @@
         `;
     }
 
-    // 💡 누락되었던 XSS 방지 escapeHtml 함수 추가!
+    // 💡 3. 하단 페이지네이션 UI 동적 생성 함수
+    function renderPagination(totalPages, pageNumber) {
+        const container = document.getElementById("pagination");
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+
+        // [이전] 버튼
+        const prevDisabled = pageNumber === 0 ? 'disabled' : '';
+        html += `<button class="page-btn" ${prevDisabled} onclick="loadPayments(${pageNumber - 1})">이전</button>`;
+
+        // [숫자] 버튼들
+        for (let i = 0; i < totalPages; i++) {
+            const activeClass = i === pageNumber ? 'active' : '';
+            html += `<button class="page-btn ${activeClass}" onclick="loadPayments(${i})">${i + 1}</button>`;
+        }
+
+        // [다음] 버튼
+        const nextDisabled = pageNumber === totalPages - 1 ? 'disabled' : '';
+        html += `<button class="page-btn" ${nextDisabled} onclick="loadPayments(${pageNumber + 1})">다음</button>`;
+
+        container.innerHTML = html;
+    }
+
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)
