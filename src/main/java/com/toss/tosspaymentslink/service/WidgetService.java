@@ -29,7 +29,6 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@Transactional
 public class WidgetService {
 
     @Value("${widget.secret.key}")
@@ -43,6 +42,7 @@ public class WidgetService {
         this.productRepository = productRepository;
     }
 
+    @Transactional
     public JSONObject payment(String jsonBody) {
         JSONObject requestObj = jsonParseObject(jsonBody);
         if (requestObj == null) {
@@ -77,7 +77,6 @@ public class WidgetService {
 
             int code = connection.getResponseCode();
             boolean isSuccess = code == 200;
-            //todo: 결제 성고시 재고 차감
 
             // 2. try-with-resources를 통한 안전한 InputStream 및 Reader 자원 해제
             try (InputStream responseStream = isSuccess ? connection.getInputStream() : connection.getErrorStream();
@@ -89,11 +88,18 @@ public class WidgetService {
                 if (isSuccess) {
                     log.info("결제 승인 성공: {}", responseJson);
 
+                    Long productId = Long.valueOf(requestObj.get("productId").toString());
+                    Product product = productRepository.findByIdWithLock(productId)
+                            .orElseThrow(() -> new IllegalArgumentException("상품이 존재하지 않습니다."));
+                    //영속성 컨텍스트(Persistence Context)
+                    //트랜잭션 종료 시 '변경 감지(Dirty Checking)' 동작, update 실행
+                    product.decreaseStock(1);
+
+                    // API 응답 객체를 반환하도록 수정 (기존엔 null 반환)
+                    saveResponse(responseJson);
                 } else {
                     log.warn("결제 승인 실패: {}", responseJson);
                 }
-                // API 응답 객체를 반환하도록 수정 (기존엔 null 반환)
-                saveResponse(responseJson);
                 return responseJson;
             }
 
