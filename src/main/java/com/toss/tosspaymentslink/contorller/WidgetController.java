@@ -1,5 +1,6 @@
 package com.toss.tosspaymentslink.contorller;
 
+import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
 import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.service.WidgetService;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +28,9 @@ public class WidgetController {
         this.widgetService = widgetService;
     }
 
-    @PostMapping(value = "/confirm")
-    public ResponseEntity<JSONObject> confirm(@RequestBody String jsonBody){
-        JSONObject jsonObject = widgetService.payment(jsonBody);
+    @PostMapping("/confirm")
+    public ResponseEntity<JSONObject> confirm(@RequestBody PaymentConfirmRequestDto requestDto){
+        JSONObject jsonObject = widgetService.payment(requestDto);
         return ResponseEntity.ok(jsonObject);
     }
 
@@ -39,4 +40,11 @@ public class WidgetController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "approvedAt"));
         return ResponseEntity.ok(widgetService.getPayments(pageable));
     }
+
+    @PostMapping("/api/payments/cencel")
+    public ResponseEntity<PaymentResponseDto> cancelPayment(@RequestBody String jsonBody){
+        log.info("cencel jsonBody: {}", jsonBody);
+        return null;
+    }
+
 }

@@ -231,7 +231,7 @@
         const cancelReason = selectedRadio ? selectedRadio.value : "단순 변심";
 
         try {
-            const response = await fetch('/api/payments/cancel', {
+            const response = await fetch('/api/payments/cencel', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

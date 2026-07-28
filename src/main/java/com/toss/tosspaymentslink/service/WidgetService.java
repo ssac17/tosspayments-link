@@ -1,5 +1,6 @@
 package com.toss.tosspaymentslink.service;
 
+import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
 import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.entity.Payment;
 import com.toss.tosspaymentslink.entity.PaymentStatus;
@@ -43,8 +44,14 @@ public class WidgetService {
     }
 
     @Transactional
-    public JSONObject payment(String jsonBody) {
-        JSONObject requestObj = jsonParseObject(jsonBody);
+    public JSONObject payment(PaymentConfirmRequestDto requestDto) {
+        JSONObject requestObj = new JSONObject();
+        requestObj.put("paymentKey", requestDto.paymentKey());
+        requestObj.put("orderId", requestDto.orderId());
+        requestObj.put("amount", requestDto.amount());
+        requestObj.put("productId", requestDto.productId());
+        requestObj.put("name", requestDto.name());
+
         if (requestObj == null) {
             log.error("요청 JSON 파싱에 실패했습니다.");
             throw new IllegalArgumentException("잘못된 요청 형식입니다.");
@@ -109,30 +116,13 @@ public class WidgetService {
         return null;
     }
 
+    public Product cancelPayment(String jsonBody) {
+        return null;
+    }
+
     public Page<PaymentResponseDto> getPayments(Pageable pageable) {
         Page<Payment> paymentPage = widgetRepository.findAll(pageable);
         return paymentPage.map(PaymentResponseDto::from);
-    }
-
-    private JSONObject jsonParseObject(String jsonBody) {
-        JSONParser jsonParser = new JSONParser();
-
-        try {
-            JSONObject jsonObject = (JSONObject) jsonParser.parse(jsonBody);
-
-            JSONObject obj = new JSONObject();
-            obj.put("paymentKey", jsonObject.get("paymentKey"));
-            obj.put("orderId", jsonObject.get("orderId"));
-            obj.put("amount", jsonObject.get("amount"));
-            obj.put("productId", jsonObject.get("productId"));
-            obj.put("name", jsonObject.get("name"));
-
-            return obj; // 기존 jsonObject 대신 정제된 obj 반환
-
-        } catch (ParseException e) {
-            log.error("JSON 파싱 중 오류 발생", e);
-            return null; // 오류 시 명시적으로 null 반환
-        }
     }
 
     private void saveResponse(JSONObject responseJson) {
