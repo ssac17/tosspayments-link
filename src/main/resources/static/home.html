@@ -77,7 +77,8 @@
             }
 
             grid.innerHTML = products.map(product => renderProductCard(product)).join('');
-
+            //재고 0개시 text색상 red
+            soldOutColorChange();
         } catch (error) {
             console.error("❌ 에러 발생:", error);
             grid.innerHTML = `<div class="empty-state">상품 정보를 불러오지 못했습니다.</div>`;
@@ -181,6 +182,16 @@
     function escapeJsStr(str) {
         if (!str) return '';
         return str.replace(/'/g, "\\'");
+    }
+    function soldOutColorChange() {
+        const stockSpan = document.querySelectorAll(".product-stock");
+        stockSpan.forEach(span => {
+            let textContent = span.textContent;
+            let stockQuantity = textContent.split(" ")[1].replace("개", "");
+            if (stockQuantity == 0) {
+                span.classList.add("sold-out-text");
+            }
+        })
     }
 </script>
 </body>

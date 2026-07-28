@@ -71,7 +71,7 @@
 
             if (!response.ok) {
                 console.error("결제 승인 실패:", json);
-                window.location.href = `/fail.html?message=${encodeURIComponent(json.message || '결제 승인 실패')}&code=${json.code || 'UNKNOWN'}`;
+                window.location.href = `/widget/fail.html?message=${encodeURIComponent(json.message || '결제 승인 실패')}&code=${json.code || 'UNKNOWN'}`;
                 return;
             }
 
@@ -82,7 +82,7 @@
 
         } catch (error) {
             console.error("통신 에러:", error);
-            window.location.href = `/fail.html?message=${encodeURIComponent("서버 통신 중 오류가 발생했습니다.")}`;
+            window.location.href = `/widget/fail.html?message=${encodeURIComponent("서버 통신 중 오류가 발생했습니다.")}`;
         }
     }
 
