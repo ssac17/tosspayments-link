@@ -75,7 +75,7 @@
 
             const json = await response.json();
 
-            // ❌ 실패 시: 사용자는 '완료 화면'을 보지 못한 채 곧바로 fail.html로 이동!
+            // 실패 시: 사용자는 '완료 화면'을 보지 못한 채 곧바로 fail.html로 이동!
             if (!response.ok) {
                 console.error("결제 승인 실패:", json);
                 window.location.href = `/widget/fail.html?message=${encodeURIComponent(json.message || '결제 승인 실패')}&code=${json.code || 'UNKNOWN'}`;

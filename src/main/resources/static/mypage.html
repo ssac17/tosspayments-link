@@ -33,6 +33,38 @@
 	</main>
 </div>
 
+<!-- 💡 결제 취소 모달 영역 -->
+<div id="cancelModal" class="modal-overlay hidden">
+	<div class="modal-content">
+		<div class="modal-header">
+			<h3>결제 취소 요청</h3>
+			<button class="close-btn" onclick="closeCancelModal()">✕</button>
+		</div>
+		<div class="modal-body">
+			<p class="modal-subtitle">취소 사유를 선택해 주세요.</p>
+			
+			<div class="radio-group">
+				<label class="radio-item">
+					<input type="radio" name="cancelReason" value="단순 변심" checked>
+					<span>단순 변심</span>
+				</label>
+				<label class="radio-item">
+					<input type="radio" name="cancelReason" value="사이즈 안맞음">
+					<span>사이즈 안맞음</span>
+				</label>
+				<label class="radio-item">
+					<input type="radio" name="cancelReason" value="상품 불량">
+					<span>상품 불량</span>
+				</label>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-secondary" onclick="closeCancelModal()">취소</button>
+			<button class="btn btn-danger" onclick="submitCancel()">결제 취소 실행</button>
+		</div>
+	</div>
+</div>
+
 <script>
     // 💡 현재 페이지 상태 관리 (0부터 시작)
     let currentPage = 0;
@@ -132,7 +164,7 @@
                         
                         <!-- 💡 DONE 상태일 때만 결제 취소 버튼 노출 -->
                         ${payment.status === 'DONE' ? `
-                            <button class="btn btn-cancel" onclick="cancelPayment('${paymentKey}')">
+                            <button class="btn btn-cancel" onclick="openCancelModal('${paymentKey}')">
                                 결제 취소
                             </button>
                         ` : ''}
@@ -168,16 +200,60 @@
 
         container.innerHTML = html;
     }
-    
-    async function cancelPayment(paymentKey) {
-        if(!paymentKey) {
-            alert("결제 정보가 없습니다!");
+
+    // 선택된 결제 키를 저장할 변수
+    let selectedPaymentKey = null;
+
+    // [결제 취소] 버튼 클릭 시 모달 열기
+    function openCancelModal(paymentKey) {
+        if (!paymentKey) {
+            alert("결제 키 정보가 없습니다.");
             return;
         }
-        const cancelFlag = confirm("결제를 취소 하시겠습니까?");
-        console.log(cancelFlag);
+        selectedPaymentKey = paymentKey;
+        document.getElementById("cancelModal").classList.remove("hidden");
     }
 
+    // 모달 닫기
+    function closeCancelModal() {
+        selectedPaymentKey = null;
+        document.getElementById("cancelModal").classList.add("hidden");
+    }
+
+    // 모달 안의 [결제 취소 실행] 버튼 클릭 시 실행
+    async function submitCancel() {
+        if (!selectedPaymentKey) return;
+
+        // 선택된 라디오 버튼의 값 가져오기
+        const selectedRadio = document.querySelector('input[name="cancelReason"]:checked');
+        const cancelReason = selectedRadio ? selectedRadio.value : "단순 변심";
+
+        try {
+            const response = await fetch('/api/payments/cancel', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    paymentKey: selectedPaymentKey,
+                    cancelReason: cancelReason
+                })
+            });
+
+            if (response.ok) {
+                alert("결제가 성공적으로 취소되었습니다.");
+                closeCancelModal();
+                loadPayments(currentPage); // 목록 새로고침
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                alert(`취소 실패: ${errorData.message || '결제 취소 처리 중 오류가 발생했습니다.'}`);
+            }
+        } catch (error) {
+            console.error("❌ 결제 취소 에러:", error);
+            alert("서버 통신 중 오류가 발생했습니다.");
+        }
+    }
+    
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)

@@ -37,14 +37,6 @@ public class WidgetController {
     public ResponseEntity<Page<PaymentResponseDto>> getPayments(@RequestParam(defaultValue = "0") int page,
                                                                 @RequestParam(defaultValue = "5") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "approvedAt"));
-        Page<PaymentResponseDto> payments = getPayments(pageable);
-        for (PaymentResponseDto payment : payments) {
-            log.info("payment: {}", payment.toString());
-        }
-        return ResponseEntity.ok(payments);
-    }
-
-    private Page<PaymentResponseDto> getPayments(Pageable pageable) {
-        return widgetService.getPayments(pageable);
+        return ResponseEntity.ok(widgetService.getPayments(pageable));
     }
 }
