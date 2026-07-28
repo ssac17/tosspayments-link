@@ -3,10 +3,12 @@ package com.toss.tosspaymentslink.dto;
 import com.toss.tosspaymentslink.entity.Payment;
 import com.toss.tosspaymentslink.entity.PaymentStatus;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.OffsetDateTime;
 
 @Getter
+@ToString
 public class PaymentResponseDto {
     private final String orderId;
     private final String paymentKey;

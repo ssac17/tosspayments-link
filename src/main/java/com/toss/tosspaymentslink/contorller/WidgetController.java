@@ -38,6 +38,9 @@ public class WidgetController {
                                                                 @RequestParam(defaultValue = "5") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "approvedAt"));
         Page<PaymentResponseDto> payments = getPayments(pageable);
+        for (PaymentResponseDto payment : payments) {
+            log.info("payment: {}", payment.toString());
+        }
         return ResponseEntity.ok(payments);
     }
 

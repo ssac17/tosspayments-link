@@ -255,3 +255,43 @@ body {
     cursor: not-allowed;
     background-color: #f9fafb;
 }
+
+/* 버튼 스타일 (기존 css 유지) */
+.btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.btn-receipt {
+    background-color: #f2f4f6;
+    color: #4e5968;
+}
+
+.btn-receipt:hover {
+    background-color: #e5e8eb;
+    color: #191f28;
+}
+
+/* 💡 결제 취소 버튼 스타일 추가 */
+.btn-cancel {
+    background-color: #fde8e8;
+    color: #e02020;
+}
+
+.btn-cancel:hover {
+    background-color: #fbd5d5;
+    color: #9b1c1c;
+}

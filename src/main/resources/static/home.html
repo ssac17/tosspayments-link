@@ -68,9 +68,8 @@
         try {
             const response = await fetch("/api/products");
             if (!response.ok) throw new Error("상품 목록 불러오기 실패");
-
+			
             const products = await response.json();
-
             if (products.length === 0) {
                 grid.innerHTML = `<div class="empty-state">등록된 상품이 없습니다.</div>`;
                 return;

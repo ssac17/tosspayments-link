@@ -94,11 +94,11 @@
         };
 
         const currentStatus = statusMap[payment.status] || { text: payment.status || '상태 없음', className: '' };
-
         const orderName = escapeHtml(payment.orderName || '상품 정보 없음');
         const orderId = escapeHtml(payment.orderId || '-');
         const method = escapeHtml(payment.method || '미지정');
         const cardInfo = payment.cardInfo ? `(${escapeHtml(payment.cardInfo)})` : '';
+        const paymentKey = payment.paymentKey || '';
 
         return `
             <div class="payment-card">
@@ -128,6 +128,13 @@
                             <a href="${payment.receiptUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-receipt">
                                 🧾 영수증
                             </a>
+                        ` : ''}
+                        
+                        <!-- 💡 DONE 상태일 때만 결제 취소 버튼 노출 -->
+                        ${payment.status === 'DONE' ? `
+                            <button class="btn btn-cancel" onclick="cancelPayment('${paymentKey}')">
+                                결제 취소
+                            </button>
                         ` : ''}
                     </div>
                 </div>
@@ -160,6 +167,15 @@
         html += `<button class="page-btn" ${nextDisabled} onclick="loadPayments(${pageNumber + 1})">다음</button>`;
 
         container.innerHTML = html;
+    }
+    
+    async function cancelPayment(paymentKey) {
+        if(!paymentKey) {
+            alert("결제 정보가 없습니다!");
+            return;
+        }
+        const cancelFlag = confirm("결제를 취소 하시겠습니까?");
+        console.log(cancelFlag);
     }
 
     function escapeHtml(str) {

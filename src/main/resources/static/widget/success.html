@@ -3,12 +3,24 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>결제 성공 - 토스페이먼츠</title>
+	<title>결제 처리 중 - 토스페이먼츠</title>
 	<link rel="stylesheet" href="/css/success.css" />
+	<style>
+        /* 로딩 스피너 애니메이션 추가 */
+        
+	</style>
 </head>
 <body>
 
-<div class="card-container">
+<!-- 1. ⏳ 결제 승인 처리 중 카드 (기본 표출) -->
+<div id="loadingCard" class="card-container">
+	<div class="spinner"></div>
+	<h2 class="title">결제를 승인하고 있습니다</h2>
+	<p class="subtitle">안전하게 처리 중이니 잠시만 기다려 주세요...</p>
+</div>
+
+<!-- 2. 🎉 결제 완료 카드 (초기에는 숨김 display: none) -->
+<div id="successCard" class="card-container" style="display: none;">
 	<div class="icon-circle">✓</div>
 	<h2 class="title">결제가 완료되었습니다</h2>
 	<p class="subtitle">주문이 성공적으로 접수되었습니다.</p>
@@ -18,7 +30,7 @@
 			<span class="info-label">주문번호</span>
 			<span id="orderId" class="info-value">-</span>
 		</div>
-		<div class="info-row">††
+		<div class="info-row">
 			<span class="info-label">PaymentKey</span>
 			<span id="paymentKey" class="info-value" style="font-size: 11px; color: #b0b8c1;">-</span>
 		</div>
@@ -42,20 +54,14 @@
     const amount = urlParams.get("amount");
     const name = urlParams.get("name");
     const productId = urlParams.get("productId");
-    
-
-    // 화면 데이터 미리 세팅
-    document.getElementById("orderId").textContent = orderId || '-';
-    document.getElementById("paymentKey").textContent = paymentKey || '-';
-    document.getElementById("amount").textContent = amount ? Number(amount).toLocaleString() + "원" : '0원';
 
     async function confirm() {
         const requestData = {
             paymentKey: paymentKey,
             orderId: orderId,
             amount: amount,
-	        name: name,
-	        productId: productId
+            name: name,
+            productId: productId
         };
 
         try {
@@ -69,6 +75,7 @@
 
             const json = await response.json();
 
+            // ❌ 실패 시: 사용자는 '완료 화면'을 보지 못한 채 곧바로 fail.html로 이동!
             if (!response.ok) {
                 console.error("결제 승인 실패:", json);
                 window.location.href = `/widget/fail.html?message=${encodeURIComponent(json.message || '결제 승인 실패')}&code=${json.code || 'UNKNOWN'}`;
@@ -77,16 +84,23 @@
 
             console.log("결제 승인 성공:", json);
 
-            // 승인 성공 시 3초 카운트다운 시작!
+            // ⭕ 성공 시: 로딩 카드 숨기고, 성공 카드 표출 후 데이터 채우기
+            document.getElementById("loadingCard").style.display = "none";
+            document.getElementById("successCard").style.display = "block";
+
+            document.getElementById("orderId").textContent = json.orderId || orderId || '-';
+            document.getElementById("paymentKey").textContent = json.paymentKey || paymentKey || '-';
+            document.getElementById("amount").textContent = Number(json.totalAmount || amount || 0).toLocaleString() + "원";
+
+            // 3초 카운트다운 시작
             startCountdown();
 
         } catch (error) {
             console.error("통신 에러:", error);
-            window.location.href = `/widget/fail.html?message=${encodeURIComponent("서버 통신 중 오류가 발생했습니다.")}`;
+            window.location.href = `/widget/fail.html?message=${encodeURIComponent("서버 통신 중 오류가 발생했습니다.")}&code=NETWORK_ERROR`;
         }
     }
 
-    
     function startCountdown() {
         let seconds = 3;
         const countdownEl = document.getElementById("countdown");
@@ -102,7 +116,7 @@
         }, 1000);
     }
 
-    // 실행
+    // 페이지 진입 시 실행
     confirm();
 </script>
 
