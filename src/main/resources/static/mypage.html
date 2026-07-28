@@ -81,17 +81,19 @@
         const paginationContainer = document.getElementById("pagination");
 
         try {
-            // 💡 page와 size 파라미터를 넘겨서 호출
             const response = await fetch(`/api/payments?page=${page}&size=${pageSize}`);
             if (!response.ok) throw new Error(`HTTP 에러! 상태: ${response.status}`);
 
-            const data = await response.json(); // PageImpl 객체 구조
-            const payments = data.content || [];
+            const data = await response.json();
 
-            // 전체 건수 표시 (data.totalElements)
-            countBadge.textContent = `${data.totalElements || 0}건`;
+            // 💡 PagedModel 규격 대응
+            const payments = data.content || (data._embedded ? data._embedded.paymentResponseDtoList : []);
+            const pageInfo = data.page || {}; // 페이지 정보 객체 ({ size, totalElements, totalPages, number })
 
-            if (payments.length === 0) {
+            // 전체 건수 표시
+            countBadge.textContent = `${pageInfo.totalElements || 0}건`;
+
+            if (!payments || payments.length === 0) {
                 listContainer.innerHTML = `<div class="empty-state">아직 결제 내역이 없습니다.</div>`;
                 paginationContainer.innerHTML = '';
                 return;
@@ -100,8 +102,8 @@
             // 1. 카드 리스트 렌더링
             listContainer.innerHTML = payments.map(payment => renderPaymentCard(payment)).join('');
 
-            // 2. 💡 페이지네이션 버튼 렌더링
-            renderPagination(data.totalPages, data.number);
+            // 2. 💡 page 객체 내부에서 totalPages, number를 꺼내어 전달
+            renderPagination(pageInfo.totalPages || 0, pageInfo.number || 0);
 
         } catch (error) {
             console.error("❌ 에러 발생:", error);
