@@ -1,22 +1,45 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-	<meta charset="utf-8" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>결제 실패 - 토스페이먼츠</title>
+	<link rel="stylesheet" href="/css/fail.css">
 </head>
-
 <body>
-<h2> 결제 실패 </h2>
-<p id="code"></p>
-<p id="message"></p>
-</body>
-</html>
+<div class="result-card">
+	<div class="icon-box">❌</div>
+	<h2 class="title">결제에 실패하였습니다</h2>
+	<p class="subtitle">요청하신 결제를 처리하지 못했습니다.</p>
+	
+	<div class="info-group">
+		<div class="info-row">
+			<span class="info-label">에러 코드</span>
+			<span id="code" class="info-value">-</span>
+		</div>
+		<div class="info-row">
+			<span class="info-label">실패 사유</span>
+			<span id="message" class="info-value">-</span>
+		</div>
+	</div>
+	
+	<div class="btn-group">
+		<a href="/home.html" class="btn btn-secondary">메인으로</a>
+		<a href="javascript:history.back()" class="btn btn-primary">다시 시도</a>
+	</div>
+</div>
 
 <script>
-    const urlParams = new URLSearchParams(window.location.search);
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
 
-    const codeElement = document.getElementById("code");
-    const messageElement = document.getElementById("message");
+        const code = urlParams.get("code") || "UNKNOWN_ERROR";
+        const message = urlParams.get("message") || "알 수 없는 오류가 발생했습니다.";
 
-    codeElement.textContent = "에러코드: " + urlParams.get("code");
-    messageElement.textContent = "실패 사유: " + urlParams.get("message");
+        document.getElementById("code").textContent = code;
+        document.getElementById("message").textContent = message;
+    });
 </script>
+
+</body>
+</html>
