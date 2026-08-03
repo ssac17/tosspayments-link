@@ -1,4 +1,4 @@
-package com.toss.tosspaymentslink.entity;
+package com.toss.tosspaymentslink.domain.enums;
 
 public enum PaymentStatus {
     READY,

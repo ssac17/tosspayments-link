@@ -1,6 +1,6 @@
 package com.toss.tosspaymentslink.service;
 
-import com.toss.tosspaymentslink.entity.Product;
+import com.toss.tosspaymentslink.domain.entity.Product;
 import com.toss.tosspaymentslink.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 

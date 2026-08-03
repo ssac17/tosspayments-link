@@ -1,50 +1,45 @@
 package com.toss.tosspaymentslink.service;
 
+import com.toss.tosspaymentslink.domain.embeded.Card;
+import com.toss.tosspaymentslink.domain.enums.AcquireStatus;
+import com.toss.tosspaymentslink.domain.enums.PayMethod;
+import com.toss.tosspaymentslink.domain.enums.Type;
 import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
-import com.toss.tosspaymentslink.dto.PaymentResponseDto;
-import com.toss.tosspaymentslink.entity.Payment;
-import com.toss.tosspaymentslink.entity.PaymentStatus;
-import com.toss.tosspaymentslink.entity.Product;
+import com.toss.tosspaymentslink.domain.entity.Payment;
+import com.toss.tosspaymentslink.domain.enums.PaymentStatus;
+import com.toss.tosspaymentslink.domain.entity.Product;
+import com.toss.tosspaymentslink.repository.PayRepository;
 import com.toss.tosspaymentslink.repository.ProductRepository;
-import com.toss.tosspaymentslink.repository.WidgetRepository;
+
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Base64;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @Service
-public class WidgetService {
+public class PayService {
 
     @Value("${widget.secret.key}")
     private String WIDGET_SECRET_KEY;
 
-    private final WidgetRepository widgetRepository;
+    private final PayRepository payRepository;
     private final ProductRepository productRepository;
     private final RestClient restClient;
 
-    public WidgetService(WidgetRepository widgetRepository, ProductRepository productRepository, RestClient restClient) {
-        this.widgetRepository = widgetRepository;
+    public PayService(PayRepository payRepository, ProductRepository productRepository, RestClient restClient) {
+        this.payRepository = payRepository;
         this.productRepository = productRepository;
         this.restClient = restClient;
     }
@@ -103,46 +98,65 @@ public class WidgetService {
         return null;
     }
 
-    public Page<PaymentResponseDto> getPayments(Pageable pageable) {
-        Page<Payment> paymentPage = widgetRepository.findAll(pageable);
-        return paymentPage.map(PaymentResponseDto::from);
-    }
+    //public Page<PaymentResponseDto> getPayments(Pageable pageable) {
+    //    Page<Payment> paymentPage = widgetRepository.findAll(pageable);
+    //    return paymentPage.map(PaymentResponseDto::from);
+    //}
 
     private void saveResponse(JSONObject responseJson) {
-        String orderId = responseJson.get("orderId").toString();
-        String paymentKey = responseJson.get("paymentKey").toString();
-        int totalAmount = ((Number) responseJson.get("totalAmount")).intValue();
-        String method = (String) responseJson.get("method");
-        PaymentStatus status = PaymentStatus.valueOf((String) responseJson.get("status"));
-        String orderName = (String) responseJson.get("orderName");
+        log.info("responseJson get card: {}", responseJson.get("card"));
+        // 응답 저장 로직
+        Payment.PaymentBuilder builder = Payment.builder();
+        builder.version((String) responseJson.get("version"))
+                .paymentKey((String) responseJson.get("paymentKey"))
+                .type(Type.valueOf(((String) responseJson.get("type")).toUpperCase()))
+                .orderId((String) responseJson.get("orderId"))
+                .orderName((String) responseJson.get("orderName"))
+                .mId((String) responseJson.get("mId"))
+                .currency((String) responseJson.get("currency"))
+                .method(PayMethod.from(((String) responseJson.get("method")).toUpperCase()))
+                .totalAmount(((Number) responseJson.get("totalAmount")).intValue())
+                .balanceAmount(((Number) responseJson.get("balanceAmount")).intValue())
+                .status(PaymentStatus.valueOf(((String) responseJson.get("status")).toUpperCase()))
+                .requestedAt(OffsetDateTime.parse((String) responseJson.get("requestedAt")))
+                .approvedAt(OffsetDateTime.parse((String) responseJson.get("approvedAt")))
+                .useEscrow((Boolean) responseJson.get("useEscrow"))
+                .lastTransactionKey((String) responseJson.get("lastTransactionKey"))
+                .suppliedAmount(((Number) responseJson.get("suppliedAmount")).intValue())
+                .vat(((Number) responseJson.get("vat")).intValue())
+                .cultureExpense((Boolean) responseJson.get("cultureExpense"))
+                .taxFreeAmount(((Number) responseJson.get("taxFreeAmount")).intValue())
+                .taxExemptionAmount(((Number) responseJson.get("taxExemptionAmount")).intValue())
+                .isPartialCancelable((Boolean) responseJson.get("isPartialCancelable"))
+                .metadata(String.valueOf(responseJson.get("metadata")))
+                .receiptUrl((String) responseJson.get("receiptUrl"))
+                .checkoutUrl((String) responseJson.get("checkoutUrl"))
+                .country((String) responseJson.get("country"))
+                .discountAmount(((Integer) responseJson.get("discountAmount")));
 
-        OffsetDateTime requestedAt = Optional.ofNullable((String) responseJson.get("requestedAt"))
-                .map(OffsetDateTime::parse).orElse(null);
-        OffsetDateTime approvedAt = Optional.ofNullable((String) responseJson.get("approvedAt"))
-                .map(OffsetDateTime::parse).orElse(null);
+        //카드결제 시
+        if(responseJson.get("card") != null) {
+            Map<String, Object> cardMap = (Map<String, Object>) responseJson.get("card");
+            Card card = Card.builder()
+                    .amount(((Integer) cardMap.get("amount")))
+                    .issuerCode((String) cardMap.get("issuerCode"))
+                    .acquirerCode((String) cardMap.get("acquirerCode"))
+                    .number((String) cardMap.get("number"))
+                    .installmentPlanMonths(((Integer) cardMap.get("installmentPlanMonths")))
+                    .approveNo((String) cardMap.get("approveNo"))
+                    .useCardPoint((Boolean) cardMap.get("useCardPoint"))
+                    .cardType((String) cardMap.get("cardType"))
+                    .ownerType((String) cardMap.get("ownerType"))
+                    .acquireStatus(cardMap.get("acquireStatus") != null ? AcquireStatus.valueOf((String) cardMap.get("acquireStatus")) : null)
+                    .isInterestFree((Boolean) cardMap.get("isInterestFree"))
+                    .interestPayer((String) cardMap.get("interestPayer"))
+                    .build();
+            builder.card(card);
+        }
 
-        // 💡 Map으로 형변환하여 receipt.url 추출
-        String receiptUrl = Optional.ofNullable((Map<?, ?>) responseJson.get("receipt"))
-                .map(receipt -> (String) receipt.get("url"))
-                .orElse(null);
+        //todo VirtualAccount: 가상계좌 결제 시
 
-        // 💡 Map으로 형변환하여 card 정보 추출
-        String cardInfo = Optional.ofNullable((Map<?, ?>) responseJson.get("card"))
-                .map(card -> String.format("%s_%s", card.get("ownerType"), card.get("number")))
-                .orElse(null);
-
-        widgetRepository.save(Payment.builder()
-                .orderId(orderId)
-                .paymentKey(paymentKey)
-                .totalAmount(totalAmount)
-                .method(method)
-                .status(status)
-                .orderName(orderName)
-                .requestedAt(requestedAt)
-                .approvedAt(approvedAt)
-                .receiptUrl(receiptUrl)
-                .cardInfo(cardInfo)
-                .build());
+        payRepository.save(builder.build());
     }
 
     private void verifyProductInfo(PaymentConfirmRequestDto requestDto) {

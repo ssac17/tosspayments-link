@@ -1,6 +1,6 @@
 package com.toss.tosspaymentslink.contorller;
 
-import com.toss.tosspaymentslink.entity.Product;
+import com.toss.tosspaymentslink.domain.entity.Product;
 import com.toss.tosspaymentslink.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;

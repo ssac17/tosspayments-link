@@ -1,6 +1,6 @@
 package com.toss.tosspaymentslink.repository;
 
-import com.toss.tosspaymentslink.entity.Product;
+import com.toss.tosspaymentslink.domain.entity.Product;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;

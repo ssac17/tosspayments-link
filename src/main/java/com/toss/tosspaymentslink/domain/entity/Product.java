@@ -1,4 +1,4 @@
-package com.toss.tosspaymentslink.entity;
+package com.toss.tosspaymentslink.domain.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

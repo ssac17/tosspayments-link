@@ -1,6 +1,6 @@
 package com.toss.tosspaymentslink.config;
 
-import com.toss.tosspaymentslink.entity.Product;
+import com.toss.tosspaymentslink.domain.entity.Product;
 import com.toss.tosspaymentslink.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
