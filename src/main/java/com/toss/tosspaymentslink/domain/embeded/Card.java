@@ -5,9 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Embeddable
-@Getter @Setter
+@Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
-@Builder
 public class Card {
     private Integer amount;
     private String issuerCode; //카드 발급사 두 자리 코드

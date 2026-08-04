@@ -1,6 +1,7 @@
 package com.toss.tosspaymentslink.contorller;
 
 import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
+import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.service.PayService;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -28,9 +29,10 @@ public class PayController {
     }
 
     @PostMapping("/v1/payments/confirm")
-    public ResponseEntity<JSONObject> confirm(@RequestBody PaymentConfirmRequestDto requestDto) {
-        JSONObject jsonObject = payService.payment(requestDto);
-        return ResponseEntity.ok(jsonObject);
+    public ResponseEntity<PaymentResponseDto> confirm(@RequestBody PaymentConfirmRequestDto requestDto) {
+        PaymentResponseDto responseDto = payService.payment(requestDto);
+        log.info("responseDto: {}", responseDto);
+        return ResponseEntity.ok(responseDto);
     }
 
     /*@GetMapping("/v1/payments")

@@ -50,9 +50,6 @@ public class Payment {
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL,  orphanRemoval = true)
     @Builder.Default
-    @AttributeOverrides({
-            @AttributeOverride(name = "taxFreeAmount", column = @Column(name = "cancel_tax_free_amount")),
-    })
     private List<Cancels> cancels = new ArrayList<>(); //취소 정보
 
     private Boolean isPartialCancelable; //부분 취소 가능 여부
@@ -121,11 +118,7 @@ public class Payment {
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    @AttributeOverrides({
-            @AttributeOverride(name ="type", column = @Column(name = "cash_receipts_type")),
-    })
     private List<CashReceipts> cashReceipts = new ArrayList<>(); //현금영수증 발행 및 취소 이력
 
     private Integer discountAmount; //결제 금액 중 할인 금액
-
 }

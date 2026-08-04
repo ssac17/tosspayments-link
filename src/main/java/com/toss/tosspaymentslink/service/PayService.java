@@ -8,6 +8,7 @@ import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
 import com.toss.tosspaymentslink.domain.entity.Payment;
 import com.toss.tosspaymentslink.domain.enums.PaymentStatus;
 import com.toss.tosspaymentslink.domain.entity.Product;
+import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.repository.PayRepository;
 import com.toss.tosspaymentslink.repository.ProductRepository;
 
@@ -45,7 +46,7 @@ public class PayService {
     }
 
     @Transactional
-    public JSONObject payment(PaymentConfirmRequestDto requestDto) {
+    public PaymentResponseDto payment(PaymentConfirmRequestDto requestDto) {
         verifyProductInfo(requestDto);
 
         JSONObject requestObj = new JSONObject();
@@ -76,8 +77,8 @@ public class PayService {
             product.decreaseStock(1);
 
             // API 응답 객체를 반환하도록 수정 (기존엔 null 반환)
-            saveResponse(responseJson);
-            return responseJson;
+            Payment savedPayment = saveResponse(responseJson);
+            return PaymentResponseDto.from(savedPayment);
 
         }catch (RestClientResponseException e) {
             // 토스 API에서 4xx, 5xx 에러 응답을 보낸 경우 (응답 Body 파싱)
@@ -103,7 +104,7 @@ public class PayService {
     //    return paymentPage.map(PaymentResponseDto::from);
     //}
 
-    private void saveResponse(JSONObject responseJson) {
+    private Payment saveResponse(JSONObject responseJson) {
         // 응답 저장 로직
         Payment.PaymentBuilder builder = Payment.builder();
         builder.version((String) responseJson.get("version"))
@@ -162,8 +163,8 @@ public class PayService {
             builder.transfer(transfer);
         }
         //간편 결제 시
-        if(responseJson.get("payment") != null) {
-            Map<String, Object> paymentMap = (Map<String, Object>) responseJson.get("payment");
+        if(responseJson.get("easyPay") != null) {
+            Map<String, Object> paymentMap = (Map<String, Object>) responseJson.get("easyPay");
             EasyPay easyPay = EasyPay.builder()
                     .provider((String) paymentMap.get("provider"))
                     .amount(((Integer) paymentMap.get("amount")))
@@ -185,8 +186,9 @@ public class PayService {
                     .build();
             builder.cashReceipt(cashReceipt);
         }
-
-        payRepository.save(builder.build());
+        Payment newPayment = builder.build();
+        payRepository.save(newPayment);
+        return newPayment;
     }
 
     private void verifyProductInfo(PaymentConfirmRequestDto requestDto) {
