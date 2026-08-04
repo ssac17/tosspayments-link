@@ -1,0 +1,161 @@
+/* ==========================================
+   order-detail.css (주문/결제 상세 전용 스타일)
+   ========================================== */
+
+/* 전체 기본 설정 */
+body {
+    background-color: #f2f4f6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #191f28;
+    margin: 0;
+    padding: 20px 0;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* 페이지 헤더 */
+.page-header {
+    margin-bottom: 24px;
+}
+
+.page-header .back-btn {
+    display: inline-block;
+    color: #4e5968;
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.page-header .back-btn:hover {
+    color: #191f28;
+}
+
+.page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    color: #191f28;
+}
+
+.page-header .subtitle {
+    font-size: 14px;
+    color: #8b95a1;
+    margin: 0;
+}
+
+/* 카드 컨테이너 */
+.detail-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+/* 세션 영역 구분 */
+.detail-section {
+    border-bottom: 1px solid #f2f4f6;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.detail-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.detail-section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #191f28;
+    margin: 0 0 14px 0;
+}
+
+/* 상세 로우 (키-값) */
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #4e5968;
+}
+
+.detail-row strong {
+    color: #191f28;
+    font-weight: 600;
+}
+
+.amount-highlight {
+    font-size: 20px;
+    color: #3182f6;
+    font-weight: 700;
+}
+
+/* 취소 이력 박스 및 구분선 */
+.cancel-divider {
+    border: 0;
+    border-top: 1px dashed #e5e8eb;
+    margin: 12px 0;
+}
+
+.cancel-amount {
+    color: #f04452 !important;
+}
+
+/* 버튼 영역 */
+.btn-container {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.btn-container .btn {
+    flex: 1;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-secondary {
+    background-color: #f2f4f6;
+    color: #4e5968;
+}
+
+.btn-secondary:hover {
+    background-color: #e5e8eb;
+}
+
+.btn-primary {
+    background-color: #3182f6;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #1b64da;
+}
+
+/* 로딩 & 빈 상태 처리 */
+.empty-state {
+    text-align: center;
+    padding: 40px 0;
+    color: #8b95a1;
+    font-size: 15px;
+}
+
+.empty-state.error {
+    color: #f04452;
+}

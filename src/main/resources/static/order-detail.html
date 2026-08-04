@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>주문/결제 상세 정보</title>
+	<link rel="stylesheet" href="/css/order-detail.css" type="text/css" />
+</head>
+<body>
+<div class="container">
+	<header class="page-header">
+		<a href="/mypage.html" class="back-btn">← 내 결제 내역</a>
+		<h1>🧾 주문/결제 상세</h1>
+		<p class="subtitle">주문 내역 및 세부 결제 정보를 확인하세요.</p>
+	</header>
+	
+	<main id="orderDetailContainer">
+		<div class="empty-state">주문 정보를 불러오는 중입니다...</div>
+	</main>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get("orderId");
+
+        if (!orderId) {
+            alert("잘못된 접근입니다. (주문번호 없음)");
+            window.location.href = "/home.html";
+            return;
+        }
+
+        loadOrderDetail(orderId);
+    });
+
+    async function loadOrderDetail(orderId) {
+        const container = document.getElementById("orderDetailContainer");
+
+        try {
+            // ⭐️ 백엔드의 GET /v1/payments/orders/{orderId} 단건 조회 API 호출
+            const response = await fetch(`/v1/payments/orders/${encodeURIComponent(orderId)}`);
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error("해당 주문의 결제 내역을 찾을 수 없습니다.");
+                }
+                throw new Error(`HTTP 에러! 상태: ${response.status}`);
+            }
+
+            const data = await response.json();
+            renderOrderDetail(data);
+
+        } catch (error) {
+            console.error("❌ 상세 조회 에러:", error);
+            container.innerHTML = `
+                <div class="detail-card">
+                    <div class="empty-state error">${escapeHtml(error.message || "주문 상세 정보를 불러오지 못했습니다.")}</div>
+                    <div class="btn-container">
+                        <a href="/home.html" class="btn btn-secondary">메인으로 이동</a>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function renderOrderDetail(data) {
+        const container = document.getElementById("orderDetailContainer");
+
+        const approvedAt = data.approvedAt || data.requestedAt
+            ? new Date(data.approvedAt || data.requestedAt).toLocaleString("ko-KR")
+            : "시간 정보 없음";
+
+        // 결제 수단별 세부 템플릿
+        let methodDetailHtml = '';
+        if (data.card) {
+            methodDetailHtml = `
+                <div class="detail-row"><span>카드번호</span><strong>${escapeHtml(data.card.number || '-')}</strong></div>
+                <div class="detail-row"><span>카드 구분</span><strong>${escapeHtml(data.card.cardType || '-')} / ${escapeHtml(data.card.ownerType || '-')}</strong></div>
+                <div class="detail-row"><span>할부 개월</span><strong>${data.card.installmentPlanMonths === 0 ? '일시불' : data.card.installmentPlanMonths + '개월'}</strong></div>
+                <div class="detail-row"><span>승인번호</span><strong>${escapeHtml(data.card.approveNo || '-')}</strong></div>
+            `;
+        } else if (data.virtualAccount) {
+            methodDetailHtml = `
+                <div class="detail-row"><span>입금 은행</span><strong>${escapeHtml(data.virtualAccount.bankCode || '-')}</strong></div>
+                <div class="detail-row"><span>계좌 번호</span><strong>${escapeHtml(data.virtualAccount.accountNumber || '-')}</strong></div>
+                <div class="detail-row"><span>입금 기한</span><strong>${data.virtualAccount.dueDate ? new Date(data.virtualAccount.dueDate).toLocaleString() : '-'}</strong></div>
+            `;
+        } else if (data.easyPay) {
+            methodDetailHtml = `
+                <div class="detail-row"><span>간편결제</span><strong>${escapeHtml(data.easyPay.provider || '-')}</strong></div>
+            `;
+        }
+
+        // 취소 이력 영역
+        let cancelsHtml = '';
+        if (data.cancels && data.cancels.length > 0) {
+            cancelsHtml = `
+                <div class="detail-section">
+                    <h3>🚫 취소 및 환불 내역</h3>
+                    ${data.cancels.map(c => `
+                        <div class="detail-row"><span>취소 사유</span><strong>${escapeHtml(c.cancelReason)}</strong></div>
+                        <div class="detail-row"><span>취소 금액</span><strong style="color: #e53e3e;">-${Number(c.cancelAmount).toLocaleString()}원</strong></div>
+                        <div class="detail-row"><span>취소 시각</span><span>${new Date(c.canceledAt).toLocaleString()}</span></div>
+                    `).join('<hr style="border:0; border-top:1px dashed #eee; margin:8px 0;"/>')}
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <div class="detail-card">
+                <div class="detail-section">
+                    <h3>📌 주문 정보</h3>
+                    <div class="detail-row"><span>주문 상품명</span><strong>${escapeHtml(data.orderName || '-')}</strong></div>
+                    <div class="detail-row"><span>주문 번호</span><strong>${escapeHtml(data.orderId || '-')}</strong></div>
+                    <div class="detail-row"><span>결제 상태</span><strong style="color: #3182f6;">${escapeHtml(data.status || '-')}</strong></div>
+                    <div class="detail-row"><span>승인 시각</span><span>${approvedAt}</span></div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>💳 결제 수단 (${escapeHtml(data.method || '-')})</h3>
+                    ${methodDetailHtml || '<div class="detail-row">상세 수단 정보가 없습니다.</div>'}
+                </div>
+
+                <div class="detail-section">
+                    <h3>💰 결제 금액 명세</h3>
+                    <div class="detail-row"><span>공급가액</span><span>${Number(data.suppliedAmount || 0).toLocaleString()}원</span></div>
+                    <div class="detail-row"><span>부가세 (VAT)</span><span>${Number(data.vat || 0).toLocaleString()}원</span></div>
+                    <div class="detail-row" style="margin-top: 8px;">
+                        <span>총 결제금액</span>
+                        <span class="amount-highlight">${Number(data.totalAmount || 0).toLocaleString()}원</span>
+                    </div>
+                </div>
+
+                ${cancelsHtml}
+
+                <div class="btn-container">
+                    ${data.receiptUrl ? `
+                        <a href="${data.receiptUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">🧾 영수증 출력</a>
+                    ` : ''}
+                    <a href="/mypage.html" class="btn btn-primary" style="background-color: #3182f6; color: white;">목록으로 이동</a>
+                </div>
+            </div>
+        `;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+</script>
+
+</body>
+</html>

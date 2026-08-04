@@ -41,7 +41,7 @@
 	</div>
 	
 	<div class="redirect-msg">
-		<strong id="countdown">3</strong>초 후 메인 화면으로 돌아갑니다.
+		<strong id="countdown">3</strong>초 후 주문 상세 페이지로 이동합니다.
 	</div>
 	
 	<a href="/home.html" class="home-btn">메인으로 이동하기</a>
@@ -111,7 +111,7 @@
 
             if (seconds <= 0) {
                 clearInterval(timer);
-                window.location.href = "/home.html";
+                window.location.href = `/order-detail.html?orderId=${encodeURIComponent(orderId)}`;
             }
         }, 1000);
     }

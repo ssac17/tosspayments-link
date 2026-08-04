@@ -41,8 +41,15 @@ public class PayController {
     }
 
     @GetMapping("/v1/payments/{paymentKey}")
-    public ResponseEntity<PaymentResponseDto> getPayment(@PathVariable String paymentKey) {
-        return payService.getPayment(paymentKey)
+    public ResponseEntity<PaymentResponseDto> getPaymentByPaymentKey(@PathVariable String paymentKey) {
+        return payService.getPaymentByPaymentKey(paymentKey)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/v1/payments/orders/{orderId}")
+    public ResponseEntity<PaymentResponseDto> getPaymentByOrderId(@PathVariable String orderId) {
+        return payService.getPaymentByOrderId(orderId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

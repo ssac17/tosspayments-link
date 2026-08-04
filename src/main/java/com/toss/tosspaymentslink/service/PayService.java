@@ -98,8 +98,12 @@ public class PayService {
         return PageResponseDto.from(dtoPage);
     }
 
-    public Optional<PaymentResponseDto> getPayment(String paymentKey) {
-        return payRepository.findByPaymentKey(paymentKey).map(PaymentResponseDto::from);
+    public Optional<PaymentResponseDto> getPaymentByPaymentKey(String paymentKey) {
+        return payRepository.findPaymentByPaymentKey(paymentKey).map(PaymentResponseDto::from);
+    }
+
+    public Optional<PaymentResponseDto> getPaymentByOrderId(String orderId) {
+        return payRepository.findPaymentByOrderId(orderId).map(PaymentResponseDto::from);
     }
 
     //todo: 결제취소 만들기
