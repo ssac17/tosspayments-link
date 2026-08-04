@@ -24,13 +24,29 @@
 		</div>
 		
 		<div id="paymentList" class="payment-list">
-			<!-- 자바스크립트로 동적 생성됨 -->
 			<div class="empty-state">결제 내역을 불러오는 중...</div>
 		</div>
 		
-		<!-- 💡 추가: 페이지네이션 버튼 영역 -->
+		<!-- 하단 페이지네이션 -->
 		<div id="pagination" class="pagination"></div>
 	</main>
+</div>
+
+<!-- 🔍 [1번 방안] 결제 상세 정보 모달 팝업 -->
+<div id="detailModal" class="modal-overlay hidden">
+	<div class="modal-content modal-lg">
+		<div class="modal-header">
+			<h3>💳 결제 상세 정보</h3>
+			<button class="close-btn" onclick="closeDetailModal()">✕</button>
+		</div>
+		<div class="modal-body" id="detailModalBody">
+			<!-- 자바스크립트로 동적 생성됨 -->
+			<div class="loading-text">상세 정보를 불러오는 중...</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-secondary" onclick="closeDetailModal()">닫기</button>
+		</div>
+	</div>
 </div>
 
 <!-- 💡 결제 취소 모달 영역 -->
@@ -66,14 +82,14 @@
 </div>
 
 <script>
-    // 💡 현재 페이지 상태 관리 (0부터 시작)
     let currentPage = 0;
-    const pageSize = 5; // 한 페이지에 보여줄 개수
+    const pageSize = 5;
 
     document.addEventListener("DOMContentLoaded", () => {
         loadPayments(currentPage);
     });
 
+    // 1. 목록 조회 (PageResponseDto 구조)
     async function loadPayments(page) {
         currentPage = page;
         const listContainer = document.getElementById("paymentList");
@@ -85,12 +101,10 @@
             if (!response.ok) throw new Error(`HTTP 에러! 상태: ${response.status}`);
 
             const data = await response.json();
-            
-            // 💡 PagedModel 규격 대응
-            const payments = data.content || (data._embedded ? data._embedded.paymentResponseDtoList : []);
-            const pageInfo = data.page || {}; // 페이지 정보 객체 ({ size, totalElements, totalPages, number })
 
-            // 전체 건수 표시
+            const payments = data.content || [];
+            const pageInfo = data.page || {};
+
             countBadge.textContent = `${pageInfo.totalElements || 0}건`;
 
             if (!payments || payments.length === 0) {
@@ -99,10 +113,7 @@
                 return;
             }
 
-            // 1. 카드 리스트 렌더링
             listContainer.innerHTML = payments.map(payment => renderPaymentCard(payment)).join('');
-
-            // 2. 💡 page 객체 내부에서 totalPages, number를 꺼내어 전달
             renderPagination(pageInfo.totalPages || 0, pageInfo.number || 0);
 
         } catch (error) {
@@ -112,9 +123,10 @@
         }
     }
 
+    // 2. 카드 목록 HTML 생성 (상세보기 버튼 추가)
     function renderPaymentCard(payment) {
-        const dateStr = payment.approvedAt
-            ? new Date(payment.approvedAt).toLocaleString("ko-KR", {
+        const dateStr = payment.approvedAt || payment.requestedAt
+            ? new Date(payment.approvedAt || payment.requestedAt).toLocaleString("ko-KR", {
                 year: 'numeric', month: '2-digit', day: '2-digit',
                 hour: '2-digit', minute: '2-digit'
             })
@@ -124,14 +136,14 @@
             'DONE': { text: '결제 완료', className: 'status-done' },
             'CANCELED': { text: '결제 취소', className: 'status-cancel' },
             'ABORTED': { text: '결제 실패', className: 'status-cancel' },
-            'READY': { text: '결제 대기', className: 'status-ready' }
+            'READY': { text: '결제 대기', className: 'status-ready' },
+            'WAITING_FOR_DEPOSIT': { text: '입금 대기', className: 'status-ready' }
         };
 
         const currentStatus = statusMap[payment.status] || { text: payment.status || '상태 없음', className: '' };
         const orderName = escapeHtml(payment.orderName || '상품 정보 없음');
         const orderId = escapeHtml(payment.orderId || '-');
         const method = escapeHtml(payment.method || '미지정');
-        const cardInfo = payment.cardInfo ? `(${escapeHtml(payment.cardInfo)})` : '';
         const paymentKey = payment.paymentKey || '';
 
         return `
@@ -154,17 +166,20 @@
                 <div class="card-footer">
                     <div class="pay-method">
                         <span>결제 수단: <strong>${method}</strong></span>
-                        ${cardInfo ? `<span class="card-detail">${cardInfo}</span>` : ''}
                     </div>
                     
                     <div class="btn-group">
+                        <!-- 🔍 1번 방안: 상세보기 버튼 추가 -->
+                        <button class="btn btn-info" onclick="openDetailModal('${paymentKey}')">
+                            🔍 상세보기
+                        </button>
+
                         ${payment.receiptUrl ? `
                             <a href="${payment.receiptUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-receipt">
                                 🧾 영수증
                             </a>
                         ` : ''}
                         
-                        <!-- 💡 DONE 상태일 때만 결제 취소 버튼 노출 -->
                         ${payment.status === 'DONE' ? `
                             <button class="btn btn-cancel" onclick="openCancelModal('${paymentKey}')">
                                 결제 취소
@@ -176,7 +191,7 @@
         `;
     }
 
-    // 💡 3. 하단 페이지네이션 UI 동적 생성 함수
+    // 3. 페이지네이션 UI
     function renderPagination(totalPages, pageNumber) {
         const container = document.getElementById("pagination");
         if (totalPages <= 1) {
@@ -185,57 +200,147 @@
         }
 
         let html = '';
-
-        // [이전] 버튼
         const prevDisabled = pageNumber === 0 ? 'disabled' : '';
         html += `<button class="page-btn" ${prevDisabled} onclick="loadPayments(${pageNumber - 1})">이전</button>`;
 
-        // [숫자] 버튼들
         for (let i = 0; i < totalPages; i++) {
             const activeClass = i === pageNumber ? 'active' : '';
             html += `<button class="page-btn ${activeClass}" onclick="loadPayments(${i})">${i + 1}</button>`;
         }
 
-        // [다음] 버튼
         const nextDisabled = pageNumber === totalPages - 1 ? 'disabled' : '';
         html += `<button class="page-btn" ${nextDisabled} onclick="loadPayments(${pageNumber + 1})">다음</button>`;
 
         container.innerHTML = html;
     }
 
-    // 선택된 결제 키를 저장할 변수
-    let selectedPaymentKey = null;
-
-    // [결제 취소] 버튼 클릭 시 모달 열기
-    function openCancelModal(paymentKey) {
+    // ==========================================
+    // 🔍 4. [1번 방안] /v1/payments/{paymentKey} 단건 상세보기 모달 로직
+    // ==========================================
+    async function openDetailModal(paymentKey) {
         if (!paymentKey) {
             alert("결제 키 정보가 없습니다.");
             return;
         }
+
+        const modal = document.getElementById("detailModal");
+        const modalBody = document.getElementById("detailModalBody");
+
+        modal.classList.remove("hidden");
+        modalBody.innerHTML = `<div class="loading-text">상세 정보를 불러오는 중입니다...</div>`;
+
+        try {
+            // ⭐️ 단건 상세 조회 API 호출
+            const response = await fetch(`/v1/payments/${paymentKey}`);
+            if (!response.ok) throw new Error("상세 정보를 불러오지 못했습니다.");
+
+            const data = await response.json();
+            renderDetailContent(data);
+
+        } catch (error) {
+            console.error("❌ 상세 조회 실패:", error);
+            modalBody.innerHTML = `<div class="empty-state error">상세 정보를 불러오는 중 오류가 발생했습니다.</div>`;
+        }
+    }
+
+    function closeDetailModal() {
+        document.getElementById("detailModal").classList.add("hidden");
+    }
+
+    // 상세보기 모달 내부 HTML 렌더링
+    function renderDetailContent(data) {
+        const modalBody = document.getElementById("detailModalBody");
+
+        // 결제 수단별 세부 정보 구성
+        let methodDetailHtml = '';
+        if (data.card) {
+            methodDetailHtml = `
+                <div class="detail-row"><span>카드번호</span><strong>${escapeHtml(data.card.number || '-')}</strong></div>
+                <div class="detail-row"><span>카드종류/구분</span><strong>${escapeHtml(data.card.cardType || '-')} / ${escapeHtml(data.card.ownerType || '-')}</strong></div>
+                <div class="detail-row"><span>할부개월</span><strong>${data.card.installmentPlanMonths === 0 ? '일시불' : data.card.installmentPlanMonths + '개월'}</strong></div>
+                <div class="detail-row"><span>승인번호</span><strong>${escapeHtml(data.card.approveNo || '-')}</strong></div>
+            `;
+        } else if (data.virtualAccount) {
+            methodDetailHtml = `
+                <div class="detail-row"><span>입금은행</span><strong>${escapeHtml(data.virtualAccount.bankCode || '-')}</strong></div>
+                <div class="detail-row"><span>가상계좌번호</span><strong>${escapeHtml(data.virtualAccount.accountNumber || '-')}</strong></div>
+                <div class="detail-row"><span>입금기한</span><strong>${data.virtualAccount.dueDate ? new Date(data.virtualAccount.dueDate).toLocaleString() : '-'}</strong></div>
+            `;
+        } else if (data.easyPay) {
+            methodDetailHtml = `
+                <div class="detail-row"><span>간편결제수단</span><strong>${escapeHtml(data.easyPay.provider || '-')}</strong></div>
+            `;
+        }
+
+        // 취소 이력 출력
+        let cancelsHtml = '';
+        if (data.cancels && data.cancels.length > 0) {
+            cancelsHtml = `
+                <div class="detail-section">
+                    <h4>🚫 취소 이력</h4>
+                    ${data.cancels.map(c => `
+                        <div class="cancel-box">
+                            <div>취소 금액: <strong>${Number(c.cancelAmount).toLocaleString()}원</strong></div>
+                            <div>취소 사유: ${escapeHtml(c.cancelReason)}</div>
+                            <div>취소 일시: ${new Date(c.canceledAt).toLocaleString()}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        modalBody.innerHTML = `
+            <div class="detail-section">
+                <h4>📌 기본 정보</h4>
+                <div class="detail-row"><span>주문명</span><strong>${escapeHtml(data.orderName)}</strong></div>
+                <div class="detail-row"><span>주문번호</span><strong>${escapeHtml(data.orderId)}</strong></div>
+                <div class="detail-row"><span>결제키</span><small>${escapeHtml(data.paymentKey)}</small></div>
+                <div class="detail-row"><span>결제상태</span><strong>${escapeHtml(data.status)}</strong></div>
+                <div class="detail-row"><span>승인시각</span><strong>${data.approvedAt ? new Date(data.approvedAt).toLocaleString() : '-'}</strong></div>
+            </div>
+
+            <div class="detail-section">
+                <h4>💳 결제 수단 상세 (${escapeHtml(data.method || '-')})</h4>
+                ${methodDetailHtml || '<div class="detail-row">상세 수단 정보 없음</div>'}
+            </div>
+
+            <div class="detail-section">
+                <h4>💰 금액 상세</h4>
+                <div class="detail-row"><span>총 결제금액</span><strong>${Number(data.totalAmount || 0).toLocaleString()}원</strong></div>
+                <div class="detail-row"><span>공급가액</span><span>${Number(data.suppliedAmount || 0).toLocaleString()}원</span></div>
+                <div class="detail-row"><span>부가세</span><span>${Number(data.vat || 0).toLocaleString()}원</span></div>
+            </div>
+
+            ${cancelsHtml}
+        `;
+    }
+
+    // ==========================================
+    // 5. 결제 취소 모달 관련
+    // ==========================================
+    let selectedPaymentKey = null;
+
+    function openCancelModal(paymentKey) {
+        if (!paymentKey) return;
         selectedPaymentKey = paymentKey;
         document.getElementById("cancelModal").classList.remove("hidden");
     }
 
-    // 모달 닫기
     function closeCancelModal() {
         selectedPaymentKey = null;
         document.getElementById("cancelModal").classList.add("hidden");
     }
 
-    // 모달 안의 [결제 취소 실행] 버튼 클릭 시 실행
     async function submitCancel() {
         if (!selectedPaymentKey) return;
 
-        // 선택된 라디오 버튼의 값 가져오기
         const selectedRadio = document.querySelector('input[name="cancelReason"]:checked');
         const cancelReason = selectedRadio ? selectedRadio.value : "단순 변심";
 
         try {
-            const response = await fetch('/api/payments/cencel', {
+            const response = await fetch('/v1/payments/cancel', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     paymentKey: selectedPaymentKey,
                     cancelReason: cancelReason
@@ -245,7 +350,7 @@
             if (response.ok) {
                 alert("결제가 성공적으로 취소되었습니다.");
                 closeCancelModal();
-                loadPayments(currentPage); // 목록 새로고침
+                loadPayments(currentPage);
             } else {
                 const errorData = await response.json().catch(() => ({}));
                 alert(`취소 실패: ${errorData.message || '결제 취소 처리 중 오류가 발생했습니다.'}`);
@@ -255,7 +360,7 @@
             alert("서버 통신 중 오류가 발생했습니다.");
         }
     }
-    
+
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)

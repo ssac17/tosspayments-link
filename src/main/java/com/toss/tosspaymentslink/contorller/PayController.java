@@ -12,10 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -40,14 +37,14 @@ public class PayController {
     public ResponseEntity<PageResponseDto<PaymentResponseDto>> getPayments(@RequestParam(defaultValue = "0") int page,
                                                                             @RequestParam(defaultValue = "5") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "approvedAt"));
-        log.info("pageable: {}", pageable);
         return ResponseEntity.ok(payService.getPayments(pageable));
     }
 
-    /*@PostMapping("/v1/payments/{paymentKey}/cancel")
-    public ResponseEntity<PaymentResponseDto> cancelPayment(@RequestBody String jsonBody){
-        log.info("cencel jsonBody: {}", jsonBody);
-        return null;
-    }*/
+    @GetMapping("/v1/payments/{paymentKey}")
+    public ResponseEntity<PaymentResponseDto> getPayment(@PathVariable String paymentKey) {
+        return payService.getPayment(paymentKey)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 }
 

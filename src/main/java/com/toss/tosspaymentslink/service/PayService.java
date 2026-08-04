@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -97,8 +98,11 @@ public class PayService {
         return PageResponseDto.from(dtoPage);
     }
 
-    //todo: 결제취소 만들기
+    public Optional<PaymentResponseDto> getPayment(String paymentKey) {
+        return payRepository.findByPaymentKey(paymentKey).map(PaymentResponseDto::from);
+    }
 
+    //todo: 결제취소 만들기
     public JSONObject cancelPayment() {
         return new JSONObject();
     }
