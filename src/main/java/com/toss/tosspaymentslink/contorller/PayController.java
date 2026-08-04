@@ -1,5 +1,6 @@
 package com.toss.tosspaymentslink.contorller;
 
+import com.toss.tosspaymentslink.dto.PageResponseDto;
 import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
 import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.service.PayService;
@@ -35,17 +36,18 @@ public class PayController {
         return ResponseEntity.ok(responseDto);
     }
 
-    /*@GetMapping("/v1/payments")
-    public ResponseEntity<Page<PaymentResponseDto>> getPayments(@RequestParam(defaultValue = "0") int page,
-                                                                @RequestParam(defaultValue = "5") int size) {
+    @GetMapping("/v1/payments")
+    public ResponseEntity<PageResponseDto<PaymentResponseDto>> getPayments(@RequestParam(defaultValue = "0") int page,
+                                                                            @RequestParam(defaultValue = "5") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "approvedAt"));
-        return ResponseEntity.ok(widgetService.getPayments(pageable));
-    */}
+        log.info("pageable: {}", pageable);
+        return ResponseEntity.ok(payService.getPayments(pageable));
+    }
 
     /*@PostMapping("/v1/payments/{paymentKey}/cancel")
     public ResponseEntity<PaymentResponseDto> cancelPayment(@RequestBody String jsonBody){
         log.info("cencel jsonBody: {}", jsonBody);
         return null;
     }*/
-
+}
 

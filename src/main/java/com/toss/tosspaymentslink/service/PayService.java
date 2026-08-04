@@ -4,6 +4,7 @@ import com.toss.tosspaymentslink.domain.embeded.*;
 import com.toss.tosspaymentslink.domain.enums.AcquireStatus;
 import com.toss.tosspaymentslink.domain.enums.PayMethod;
 import com.toss.tosspaymentslink.domain.enums.Type;
+import com.toss.tosspaymentslink.dto.PageResponseDto;
 import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
 import com.toss.tosspaymentslink.domain.entity.Payment;
 import com.toss.tosspaymentslink.domain.enums.PaymentStatus;
@@ -90,7 +91,14 @@ public class PayService {
         }
     }
 
+    public PageResponseDto<PaymentResponseDto> getPayments(Pageable pageable) {
+        Page<Payment> paymentPage = payRepository.findAll(pageable);
+        Page<PaymentResponseDto> dtoPage = paymentPage.map(PaymentResponseDto::from);
+        return PageResponseDto.from(dtoPage);
+    }
+
     //todo: 결제취소 만들기
+
     public JSONObject cancelPayment() {
         return new JSONObject();
     }
@@ -98,10 +106,10 @@ public class PayService {
     public Product cancelPayment(String jsonBody) {
         return null;
     }
-
     //public Page<PaymentResponseDto> getPayments(Pageable pageable) {
     //    Page<Payment> paymentPage = widgetRepository.findAll(pageable);
     //    return paymentPage.map(PaymentResponseDto::from);
+
     //}
 
     private Payment saveResponse(JSONObject responseJson) {

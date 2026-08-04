@@ -62,13 +62,10 @@ public record PaymentResponseDto(
                 TransferDto.from(savedPayment.getTransfer()),
                 MobilePhoneDto.from(savedPayment.getMobilePhone()),
                 null,
-
-                // cancels 리스트 변환 처리
                 // cancels 리스트 변환 처리
                 savedPayment.getCancels() != null
                         ? savedPayment.getCancels().stream().map(CancelDto::from).toList()
                         : null,
-
                 savedPayment.getSecret(),
                 savedPayment.getType() != null ? savedPayment.getType().name() : null,
                 EasyPayDto.from(savedPayment.getEasyPay()),

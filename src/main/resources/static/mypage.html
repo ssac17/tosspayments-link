@@ -81,11 +81,11 @@
         const paginationContainer = document.getElementById("pagination");
 
         try {
-            const response = await fetch(`/api/payments?page=${page}&size=${pageSize}`);
+            const response = await fetch(`/v1/payments?page=${page}&size=${pageSize}`);
             if (!response.ok) throw new Error(`HTTP 에러! 상태: ${response.status}`);
 
             const data = await response.json();
-
+            
             // 💡 PagedModel 규격 대응
             const payments = data.content || (data._embedded ? data._embedded.paymentResponseDtoList : []);
             const pageInfo = data.page || {}; // 페이지 정보 객체 ({ size, totalElements, totalPages, number })
