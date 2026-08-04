@@ -4,7 +4,7 @@ import jakarta.persistence.Embeddable;
 import lombok.*;
 
 @Embeddable
-@Getter @Setter
+@Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 @ToString
 public class EasyPay {

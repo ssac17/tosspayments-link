@@ -1,6 +1,6 @@
 package com.toss.tosspaymentslink.service;
 
-import com.toss.tosspaymentslink.domain.embeded.Card;
+import com.toss.tosspaymentslink.domain.embeded.*;
 import com.toss.tosspaymentslink.domain.enums.AcquireStatus;
 import com.toss.tosspaymentslink.domain.enums.PayMethod;
 import com.toss.tosspaymentslink.domain.enums.Type;
@@ -104,7 +104,6 @@ public class PayService {
     //}
 
     private void saveResponse(JSONObject responseJson) {
-        log.info("responseJson get card: {}", responseJson.get("card"));
         // 응답 저장 로직
         Payment.PaymentBuilder builder = Payment.builder();
         builder.version((String) responseJson.get("version"))
@@ -153,8 +152,39 @@ public class PayService {
                     .build();
             builder.card(card);
         }
+        //계좌 이체 시
+        if(responseJson.get("transfer") != null) {
+            Map<String, Object> transferMap = (Map<String, Object>) responseJson.get("transfer");
+            Transfer transfer = Transfer.builder()
+                    .bankCode((String) transferMap.get("bankCode"))
+                    .settlementStatus((String) transferMap.get("settlementStatus"))
+                    .build();
+            builder.transfer(transfer);
+        }
+        //간편 결제 시
+        if(responseJson.get("payment") != null) {
+            Map<String, Object> paymentMap = (Map<String, Object>) responseJson.get("payment");
+            EasyPay easyPay = EasyPay.builder()
+                    .provider((String) paymentMap.get("provider"))
+                    .amount(((Integer) paymentMap.get("amount")))
+                    .discountAmount(((Integer) paymentMap.get("discountAmount")))
+                    .build();
+            builder.easyPay(easyPay);
+        }
 
-        //todo VirtualAccount: 가상계좌 결제 시
+        //현금 영수증
+        if(responseJson.get("cashReceipt") != null) {
+            Map<String, Object> cashReceiptMap = (Map<String, Object>) responseJson.get("cashReceipt");
+            CashReceipt cashReceipt = CashReceipt.builder()
+                    .type((String) cashReceiptMap.get("type"))
+                    .receiptKey((String) cashReceiptMap.get("receiptKey"))
+                    .issueNumber((String) cashReceiptMap.get("issueNumber"))
+                    .receiptUrl((String) cashReceiptMap.get("receiptUrl"))
+                    .amount(((Integer) cashReceiptMap.get("amount")))
+                    .taxFreeAmount(((Integer) cashReceiptMap.get("taxFreeAmount")))
+                    .build();
+            builder.cashReceipt(cashReceipt);
+        }
 
         payRepository.save(builder.build());
     }

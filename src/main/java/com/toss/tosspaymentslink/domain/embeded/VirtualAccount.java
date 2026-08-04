@@ -7,7 +7,7 @@ import lombok.*;
 import java.time.OffsetDateTime;
 
 @Embeddable
-@Getter @Setter
+@Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 @ToString
 public class VirtualAccount {
