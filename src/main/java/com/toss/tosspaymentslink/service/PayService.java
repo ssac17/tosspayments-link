@@ -1,10 +1,12 @@
 package com.toss.tosspaymentslink.service;
 
 import com.toss.tosspaymentslink.domain.embeded.*;
+import com.toss.tosspaymentslink.domain.entity.Cancels;
 import com.toss.tosspaymentslink.domain.enums.AcquireStatus;
 import com.toss.tosspaymentslink.domain.enums.PayMethod;
 import com.toss.tosspaymentslink.domain.enums.Type;
 import com.toss.tosspaymentslink.dto.PageResponseDto;
+import com.toss.tosspaymentslink.dto.PaymentCancelRequestDto;
 import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
 import com.toss.tosspaymentslink.domain.entity.Payment;
 import com.toss.tosspaymentslink.domain.enums.PaymentStatus;
@@ -15,6 +17,7 @@ import com.toss.tosspaymentslink.repository.ProductRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -23,12 +26,11 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.databind.JsonNode;
 
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
-import java.util.Base64;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -107,18 +109,37 @@ public class PayService {
     }
 
     //todo: 결제취소 만들기
-    public JSONObject cancelPayment() {
-        return new JSONObject();
+    @Transactional
+    public Optional<PaymentResponseDto> cancelPaymentByPaymentKey(String paymentKey, PaymentCancelRequestDto cancelReason) {
+        Payment payment = payRepository.findPaymentByPaymentKey(paymentKey)
+                .orElseThrow(() -> new IllegalArgumentException("해당 주문건이 없습니다."));
+        if(payment.getStatus() == PaymentStatus.CANCELED) {
+            throw new IllegalStateException("이미 취소된 결제건입니다.");
+        }
+
+        String authorizations = "Basic " + Base64.getEncoder()
+                .encodeToString((WIDGET_SECRET_KEY + ":").getBytes(StandardCharsets.UTF_8));
+
+        JSONObject jsonResponse = restClient.post()
+                .uri("https://api.tosspayments.com/v1/payments/{paymentKey}/cancel", paymentKey)
+                .header("Authorization", authorizations)
+                .header("Content-Type", "application/json")
+                .header("Idempotency-Key", UUID.randomUUID().toString()) // 💡 중복 취소 방지용 멱등키 (강력 추천)
+                .body(cancelReason)
+                .retrieve()
+                .body(JSONObject.class);
+
+        Cancels savedCancel = saveCancelResponse(jsonResponse);
+        List<Cancels> cancelList = List.of(savedCancel);
+        savedCancel.setPayment(payment);
+        payment.addCancels(cancelList);
+        payment.setStatus(PaymentStatus.CANCELED);
+
+        Optional<PaymentResponseDto> paymentResponseDto = Optional.of(PaymentResponseDto.from(payment));
+        log.info("paymentResponseDto : {}", paymentResponseDto);
+        return paymentResponseDto;
     }
 
-    public Product cancelPayment(String jsonBody) {
-        return null;
-    }
-    //public Page<PaymentResponseDto> getPayments(Pageable pageable) {
-    //    Page<Payment> paymentPage = widgetRepository.findAll(pageable);
-    //    return paymentPage.map(PaymentResponseDto::from);
-
-    //}
 
     private Payment saveResponse(JSONObject responseJson) {
         // 응답 저장 로직
@@ -205,6 +226,31 @@ public class PayService {
         Payment newPayment = builder.build();
         payRepository.save(newPayment);
         return newPayment;
+    }
+
+    private Cancels saveCancelResponse(JSONObject jsonResponse) {
+        if (jsonResponse == null || !jsonResponse.containsKey("cancels")) {
+            return null;
+        }
+
+        List<Map<String, Object>> cancelsList = (List<Map<String, Object>>) jsonResponse.get("cancels");
+        Map<String, Object> cancelMap = cancelsList.get(0);
+        log.info("cancelMap: {}", cancelMap);
+        return Cancels.builder()
+                .cancelAmount((Integer) cancelMap.get("cancelAmount"))
+                .cancelReason((String) cancelMap.get("cancelReason"))
+                .taxFreeAmount((Integer) cancelMap.get("taxFreeAmount"))
+                .taxExemptionAmount((Integer) cancelMap.get("taxExemptionAmount"))
+                .refundableAmount((Integer) cancelMap.get("refundableAmount"))
+                .cardDiscountAmount((Integer) cancelMap.get("cardDiscountAmount"))
+                .transferDiscountAmount((Integer) cancelMap.get("transferDiscountAmount"))
+                .easyPayDiscountAmount((Integer) cancelMap.get("easyPayDiscountAmount"))
+                .canceledAt(OffsetDateTime.parse((String) cancelMap.get("canceledAt")))
+                .transactionKey((String) cancelMap.get("transactionKey"))
+                .receiptKey((String) cancelMap.get("receiptKey"))
+                .cancelStatus((String) cancelMap.get("cancelStatus"))
+                .cancelRequestId((String) cancelMap.get("cancelRequestId"))
+                .build();
     }
 
     private void verifyProductInfo(PaymentConfirmRequestDto requestDto) {

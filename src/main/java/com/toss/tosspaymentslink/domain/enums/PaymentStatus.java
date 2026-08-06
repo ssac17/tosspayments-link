@@ -7,5 +7,6 @@ public enum PaymentStatus {
     DONE,
     PARTIAL_CANCELED,
     ABORTED,
-    EXPIRED
+    EXPIRED,
+    CANCELED
 }

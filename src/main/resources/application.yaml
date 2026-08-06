@@ -16,7 +16,6 @@ spring:
         format_sql: true
         show_sql: true
 
-# 💡 직접 정의하신 시크릿 키는 이렇게 커스텀 키로 보관하시면 됩니다!
 widget:
   secret:
     key: "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6"

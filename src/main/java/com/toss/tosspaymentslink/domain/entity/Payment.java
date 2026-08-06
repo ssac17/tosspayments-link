@@ -121,4 +121,15 @@ public class Payment {
     private List<CashReceipts> cashReceipts = new ArrayList<>(); //현금영수증 발행 및 취소 이력
 
     private Integer discountAmount; //결제 금액 중 할인 금액
+
+    public void addCancels(List<Cancels> newCancels) {
+        if (this.cancels == null) {
+            this.cancels = new ArrayList<>();
+        }
+        this.cancels.clear(); // 기존 요소 제거
+        for (Cancels cancel : newCancels) {
+            cancel.setPayment(this); // 양방향 연관관계 설정
+            this.cancels.add(cancel);
+        }
+    }
 }

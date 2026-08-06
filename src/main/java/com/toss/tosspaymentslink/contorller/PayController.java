@@ -1,6 +1,7 @@
 package com.toss.tosspaymentslink.contorller;
 
 import com.toss.tosspaymentslink.dto.PageResponseDto;
+import com.toss.tosspaymentslink.dto.PaymentCancelRequestDto;
 import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
 import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.service.PayService;
@@ -29,7 +30,6 @@ public class PayController {
     @PostMapping("/v1/payments/confirm")
     public ResponseEntity<PaymentResponseDto> confirm(@RequestBody PaymentConfirmRequestDto requestDto) {
         PaymentResponseDto responseDto = payService.payment(requestDto);
-        log.info("responseDto: {}", responseDto);
         return ResponseEntity.ok(responseDto);
     }
 
@@ -50,6 +50,13 @@ public class PayController {
     @GetMapping("/v1/payments/orders/{orderId}")
     public ResponseEntity<PaymentResponseDto> getPaymentByOrderId(@PathVariable String orderId) {
         return payService.getPaymentByOrderId(orderId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/v1/payments/{paymentKey}/cancel")
+    public ResponseEntity<PaymentResponseDto> cancelPayment(@PathVariable String paymentKey, @RequestBody PaymentCancelRequestDto requestDto) {
+        return payService.cancelPaymentByPaymentKey(paymentKey, requestDto)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
