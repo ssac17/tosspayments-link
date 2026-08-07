@@ -13,7 +13,12 @@
 <!-- 상단 내비게이션 -->
 <nav class="navbar">
 	<a href="/home.html" class="logo">Shop</a>
-	<a href="/mypage.html" class="mypage-link">👤 마이페이지</a>
+	<!-- 💡 오른쪽 메뉴 영역 (마이페이지 & 관리자 버튼) -->
+	<div class="nav-right">
+		<a href="/mypage.html" class="mypage-link">👤 마이페이지</a>
+		<!-- ⚙️ 관리자 대시보드 이동 버튼 -->
+		<a href="/admin.html" class="admin-link">⚙️ 관리자</a>
+	</div>
 </nav>
 
 <div class="container">
@@ -68,7 +73,7 @@
         try {
             const response = await fetch("/api/products");
             if (!response.ok) throw new Error("상품 목록 불러오기 실패");
-			
+
             const products = await response.json();
             if (products.length === 0) {
                 grid.innerHTML = `<div class="empty-state">등록된 상품이 없습니다.</div>`;
@@ -85,7 +90,6 @@
     }
 
     // 💡 상품 카드 HTML 생성
-    // 💡 상품 카드 HTML 생성 (인자는 productId, productName, amount 딱 3개만 전달)
     function renderProductCard(product) {
         const imgUrl = product.imageUrl ? product.imageUrl : 'https://placehold.co/400x400?text=No+Image';
         const formattedPrice = Number(product.price).toLocaleString();
@@ -111,10 +115,11 @@
         </div>
     `;
     }
+
     // 💡 1. [구매하기] 클릭 시 결제위젯 모달 띄우기
     function openPaymentModal(productId, productName, amount) {
-        selectedProductId = productId; // 👈 선택한 상품 ID 저장
-        selectedAmount = amount;       // 👈 선택한 상품 가격 저장
+        selectedProductId = productId; // 선택한 상품 ID 저장
+        selectedAmount = amount;       // 선택한 상품 가격 저장
 
         document.getElementById("modalProductName").innerText = productName;
         document.getElementById("modalProductPrice").innerText = Number(amount).toLocaleString() + "원";
@@ -149,7 +154,6 @@
         paymentWidget.requestPayment({
             orderId: orderId,
             orderName: productName,
-            // 🌟 핵심: successUrl 파라미터로 productId를 확실하게 전달!
             successUrl: window.location.origin + `/widget/success.html?productId=${productId}&name=${productName}`,
             failUrl: window.location.origin + "/widget/fail.html",
             customerEmail: "customer@example.com",
@@ -182,6 +186,7 @@
         if (!str) return '';
         return str.replace(/'/g, "\\'");
     }
+
     function soldOutColorChange() {
         const stockSpan = document.querySelectorAll(".product-stock");
         stockSpan.forEach(span => {

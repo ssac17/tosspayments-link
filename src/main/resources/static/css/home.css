@@ -281,3 +281,23 @@ body {
     color: #ff4d4f !important;
     font-weight: bold;
 }
+
+/* 💡 관리자 버튼 스타일 추가 */
+.admin-link {
+    text-decoration: none;
+    color: #4a5568;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background-color: #edf2f7;
+    transition: all 0.2s ease;
+    margin-left: 10px;
+}
+.admin-link:hover {
+    background-color: #e2e8f0;
+    color: #2d3748;
+}
+.nav-right {
+    display: flex;
+    align-items: center;
+}
