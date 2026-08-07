@@ -2,16 +2,10 @@ package com.toss.tosspaymentslink.service;
 
 import com.toss.tosspaymentslink.domain.embeded.*;
 import com.toss.tosspaymentslink.domain.entity.Cancels;
-import com.toss.tosspaymentslink.domain.enums.AcquireStatus;
-import com.toss.tosspaymentslink.domain.enums.PayMethod;
-import com.toss.tosspaymentslink.domain.enums.Type;
-import com.toss.tosspaymentslink.dto.PageResponseDto;
-import com.toss.tosspaymentslink.dto.PaymentCancelRequestDto;
-import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
+import com.toss.tosspaymentslink.domain.enums.*;
+import com.toss.tosspaymentslink.dto.*;
 import com.toss.tosspaymentslink.domain.entity.Payment;
-import com.toss.tosspaymentslink.domain.enums.PaymentStatus;
 import com.toss.tosspaymentslink.domain.entity.Product;
-import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.repository.PayRepository;
 import com.toss.tosspaymentslink.repository.ProductRepository;
 
@@ -23,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -42,11 +37,13 @@ public class PayService {
     private final PayRepository payRepository;
     private final ProductRepository productRepository;
     private final RestClient restClient;
+    private final SimpMessagingTemplate  simpMessagingTemplate;
 
-    public PayService(PayRepository payRepository, ProductRepository productRepository, RestClient restClient) {
+    public PayService(PayRepository payRepository, ProductRepository productRepository, RestClient restClient, SimpMessagingTemplate simpMessagingTemplate) {
         this.payRepository = payRepository;
         this.productRepository = productRepository;
         this.restClient = restClient;
+        this.simpMessagingTemplate = simpMessagingTemplate;
     }
 
     @Transactional
@@ -82,7 +79,13 @@ public class PayService {
 
             // API 응답 객체를 반환하도록 수정 (기존엔 null 반환)
             Payment savedPayment = saveResponse(responseJson);
-            return PaymentResponseDto.from(savedPayment);
+            PaymentResponseDto paymentResponseDto = PaymentResponseDto.from(savedPayment);
+
+            //websocket으로 관리자 화면으로 데이터 전송
+            AdminNotificationDto notificationDto = createAdminNotificationDto(paymentResponseDto);
+            simpMessagingTemplate.convertAndSend("/topic/admin/payment", notificationDto);
+
+            return paymentResponseDto;
 
         }catch (RestClientResponseException e) {
             // 토스 API에서 4xx, 5xx 에러 응답을 보낸 경우 (응답 Body 파싱)
@@ -108,7 +111,6 @@ public class PayService {
         return payRepository.findPaymentByOrderId(orderId).map(PaymentResponseDto::from);
     }
 
-    //todo: 결제취소 만들기
     @Transactional
     public Optional<PaymentResponseDto> cancelPaymentByPaymentKey(String paymentKey, PaymentCancelRequestDto cancelReason) {
         Payment payment = payRepository.findPaymentByPaymentKey(paymentKey)
@@ -136,7 +138,11 @@ public class PayService {
         payment.setStatus(PaymentStatus.CANCELED);
 
         Optional<PaymentResponseDto> paymentResponseDto = Optional.of(PaymentResponseDto.from(payment));
-        log.info("paymentResponseDto : {}", paymentResponseDto);
+
+        //websocket으로 관리자 화면으로 데이터 전송
+        AdminNotificationDto notificationDto = createAdminNotificationDto(paymentResponseDto.get());
+        simpMessagingTemplate.convertAndSend("/topic/admin/payment", notificationDto);
+
         return paymentResponseDto;
     }
 
@@ -266,5 +272,21 @@ public class PayService {
             throw new IllegalArgumentException("결제 금액이 일치하지 않습니다.");
         }
         log.info("✅ 상품 검증 완료 - 상품명: {}, 금액: {}원", findProduct.getName(), findProduct.getPrice());
+    }
+
+    private AdminNotificationDto createAdminNotificationDto(PaymentResponseDto responseDto) {
+        AdminNotificationDto dto = new AdminNotificationDto();
+        if(responseDto.cancels() == null || responseDto.cancels().isEmpty()) {
+            dto.setType(NotificationType.PAYMENT_SUCCESS);
+            dto.setOrderName(responseDto.orderName());
+            dto.setReason("");
+            dto.setAmount(responseDto.totalAmount());
+        } else  {
+            dto.setType(NotificationType.PAYMENT_CANCELED);
+            dto.setOrderName(responseDto.orderName());
+            dto.setReason(responseDto.cancels().getFirst().cancelReason());
+            dto.setAmount(responseDto.cancels().getFirst().cancelAmount());
+        }
+        return dto;
     }
 }

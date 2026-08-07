@@ -176,7 +176,7 @@ public record PaymentResponseDto(
         }
     }
 
-    record CancelDto(
+    public record CancelDto(
             Integer cancelAmount,
             String cancelReason,
             Integer taxFreeAmount,
