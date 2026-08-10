@@ -6,17 +6,12 @@ import com.toss.tosspaymentslink.dto.PaymentConfirmRequestDto;
 import com.toss.tosspaymentslink.dto.PaymentResponseDto;
 import com.toss.tosspaymentslink.service.PayService;
 import lombok.extern.slf4j.Slf4j;
-import org.json.simple.JSONObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
 
 @Slf4j
 @Controller
@@ -59,6 +54,11 @@ public class PayController {
         return payService.cancelPaymentByPaymentKey(paymentKey, requestDto)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/v1/payments/today-summary")
+    public ResponseEntity<AdminTodaySummaryDto> getTodaySummary() {
+        return ResponseEntity.ok(payService.findNewestPayments());
     }
 }
 

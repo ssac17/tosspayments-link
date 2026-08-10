@@ -16,7 +16,13 @@
 <div class="max-w-6xl mx-auto">
 	<!-- 헤더 -->
 	<div class="flex justify-between items-center mb-8">
-		<h1 class="text-3xl font-bold text-gray-800">💳 결제/취소 실시간 모니터링</h1>
+		<!-- 💡 제목 옆에 '메인으로' 버튼 추가 -->
+		<div class="flex items-center space-x-4">
+			<h1 class="text-3xl font-bold text-gray-800">💳 결제/취소 실시간 모니터링</h1>
+			<a href="/" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm">
+				🏠 메인으로
+			</a>
+		</div>
 		<div id="connection-status" class="flex items-center space-x-2 text-sm font-semibold text-red-500">
 			<span class="w-3 h-3 bg-red-500 rounded-full inline-block animate-ping"></span>
 			<span>연결 대기 중...</span>
@@ -44,8 +50,9 @@
 	
 	<!-- 실시간 로그 테이블 -->
 	<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-		<div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+		<div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
 			<h2 class="text-lg font-bold text-gray-700">실시간 결제/취소 타임라인</h2>
+			<small class="text-sm text-gray-600 font-normal">(최근 10건)</small>
 		</div>
 		<div class="overflow-x-auto">
 			<table class="w-full text-left border-collapse">
@@ -70,13 +77,20 @@
 </div>
 
 <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        loadNewestPayments();
+    })
+
+
     let totalAmount = 0;  //총 금액
     let paymentCount = 0; //결제 건수
     let cancelCount = 0;  //취소 건수
-
+    const connectStatusSpan = document.querySelectorAll("#connection-status span");
     const paymentCountPTag = document.querySelector("#payment-count");
     const totalAmountPTag = document.querySelector("#total-amount");
     const cancelCountPTag = document.querySelector("#cancel-count");
+    const listTd = document.querySelector("#empty-row");
+    const logList = document.querySelector("#event-log-list"); // <tbody>
 
     let sock = new SockJS("/ws-stomp");
     let stomp = Stomp.over(sock);
@@ -86,13 +100,12 @@
 
     function successCallback() {
         //연결 성공시, 연결성공, text 초록으로 변경
-        const connectStatusSpan = document.querySelectorAll("#connection-status span");
         connectStatusSpan[0].classList.remove("bg-red-500");
         connectStatusSpan[0].classList.add("bg-green-500");
         connectStatusSpan[1].classList.add("text-green-500");
-        connectStatusSpan[1].textContent = "연결 완료";
+        connectStatusSpan[1].textContent = "실시간 연결 중..";
 
-        stomp.subscribe("/topic/admin/payment", function (response) {
+        stomp.subscribe("/topic/admin/payment", (response) => {
             let data = JSON.parse(response.body);
             console.log(data);
             if(data.type === "PAYMENT_SUCCESS") {
@@ -100,6 +113,7 @@
                 paymentCountPTag.textContent = paymentCount + " 건";
                 totalAmount = totalAmount + data.amount;
                 totalAmountPTag.textContent = totalAmount + " 원";
+                addRealtimeRow(data);
             }else if(data.type === "PAYMENT_CANCELED") {
                 cancelCount = cancelCount + 1;
                 cancelCountPTag.textContent = cancelCount + " 건";
@@ -110,9 +124,77 @@
     }
 
     function errorCallback() {
-
+        connectStatusSpan[0].classList.remove("bg-green-500");
+        connectStatusSpan[0].classList.add("bg-red-500");
+        connectStatusSpan[1].classList.add("text-red-500");
+        connectStatusSpan[1].textContent = "연결 실패(서버 확인 필요)";
     }
 
+    async function loadNewestPayments() {
+        const url = "/v1/payments/today-summary";
+        const response = await fetch(url);
+        let data = await response.json();
+        console.log(data);
+        totalAmount = data.totalAmount;
+        paymentCount = data.paymentCount;
+        cancelCount = data.cancelCount;
+        totalAmountPTag.textContent = totalAmount + " 원";
+        paymentCountPTag.textContent = paymentCount + " 건";
+        cancelCountPTag.textContent = cancelCount + " 건";
+        
+        if(listTd) {
+            listTd.remove();
+        }
+        for (const payment of data.recentPayments) {
+            const newRow = document.createElement("tr");
+	        
+            const isSuccess = payment.status === "DONE" || payment.type === "PAYMENT_SUCCESS";
+            const statusText = isSuccess ? "결제 성공" : "결제 취소";
+            const statusColor = isSuccess ? "text-green-600" : "text-red-500";
+            const amountSign = isSuccess ? "+" : "-";
+            const detailText = isSuccess ? (payment.orderName || "결제 완료") : (payment.cancelReason || "단순 변심");
+            const formattedTime = new Date(payment.approvedAt).toLocaleTimeString('ko-KR');
+	        
+            newRow.innerHTML = `
+			        <td class="py-3 px-6 font-bold ${statusColor}">${statusText}</td>
+			        <td class="py-3 px-6 text-gray-600">${detailText}</td>
+			        <td class="py-3 px-6 font-semibold ${statusColor}">${amountSign}${payment.balanceAmount}원</td>
+			        <td class="py-3 px-6 text-gray-400">${formattedTime}</td>
+            `;
+            logList.appendChild(newRow);
+        }
+    }
+    
+function addRealtimeRow(data) {
+    const emptyRow = document.querySelector("#empty-row");
+    if (emptyRow) emptyRow.remove();
+    const newRow = document.createElement("tr");
+
+    const isSuccess = data.type === "PAYMENT_SUCCESS";
+    const statusText = isSuccess ? "결제 성공" : "결제 취소";
+    const statusColor = isSuccess ? "text-green-600" : "text-red-500";
+    const amountSign = isSuccess ? "+" : "-";
+    const detailText = isSuccess ? (data.orderName || "결제 완료") : (data.cancelReason || "단순 변심");
+	
+    const formattedTime = data.approvedAt
+        ? new Date(data.approvedAt).toLocaleTimeString('ko-KR')
+        : new Date().toLocaleTimeString('ko-KR');
+
+    const amountValue = data.amount || 0;
+
+    newRow.innerHTML = `
+        <td class="py-3 px-6 font-bold ${statusColor}">${statusText}</td>
+        <td class="py-3 px-6 text-gray-600">${detailText}</td>
+        <td class="py-3 px-6 font-semibold ${statusColor}">${amountSign}${amountValue.toLocaleString()}원</td>
+        <td class="py-3 px-6 text-gray-400">${formattedTime}</td>
+    `;
+	
+    logList.prepend(newRow);
+	
+    if (logList.children.length > 10) {
+        logList.lastElementChild.remove();
+    }
+}
 
 </script>
 </body>

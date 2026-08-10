@@ -1,5 +1,6 @@
 package com.toss.tosspaymentslink.service;
 
+import com.toss.tosspaymentslink.contorller.AdminTodaySummaryDto;
 import com.toss.tosspaymentslink.domain.embeded.*;
 import com.toss.tosspaymentslink.domain.entity.Cancels;
 import com.toss.tosspaymentslink.domain.enums.*;
@@ -11,7 +12,6 @@ import com.toss.tosspaymentslink.repository.ProductRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -21,10 +21,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
-import tools.jackson.databind.JsonNode;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Slf4j
@@ -146,6 +147,12 @@ public class PayService {
         return paymentResponseDto;
     }
 
+    public AdminTodaySummaryDto findNewestPayments() {
+        OffsetDateTime todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toOffsetDateTime();
+        List<Payment> paymentList = payRepository.findTop10ByApprovedAtGreaterThanEqualOrderByApprovedAtDesc(todayStart);
+        log.info("paymentList: {}", paymentList);
+        return AdminTodaySummaryDto.from(paymentList);
+    }
 
     private Payment saveResponse(JSONObject responseJson) {
         // 응답 저장 로직
