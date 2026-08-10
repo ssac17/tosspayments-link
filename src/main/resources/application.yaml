@@ -2,6 +2,20 @@ spring:
   application:
     name: tosspayments-link
 
+    # application.yml 예시
+
+    devtools:
+      livereload:
+        enabled: true # 파일 변경 시 브라우저 자동 새로고침 켜기
+      restart:
+        enabled: true
+    thymeleaf: # Thymeleaf 사용 시
+      cache: false
+    web:
+      resources:
+        cache:
+          period: 0 # 정적 리소스 캐시 끄기
+
   datasource:
     url: jdbc:mysql://localhost:3306/tosspayments?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
     username: root
@@ -19,5 +33,7 @@ spring:
 widget:
   secret:
     key: "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6"
+
+
 
 

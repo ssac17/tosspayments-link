@@ -7,8 +7,8 @@
 	<!-- CSS 라이브러리 (Tailwind CSS) -->
 	<script src="https://cdn.tailwindcss.com"></script>
 	<!-- SockJS & STOMP 라이브러리 (웹소켓 통신용) -->
-	<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+	<script src="/js/sockjs.min.js"></script>
+	<script src="/js/stomp.min.js"></script>
 	<link rel="stylesheet" href="/css/admin.css">
 </head>
 <body class="bg-gray-100 p-8">
@@ -69,83 +69,51 @@
 	</div>
 </div>
 
-<!-- 스크립트: 웹소켓 연결 및 DOM 조작 -->
 <script>
-    let totalAmount = 0;
-    let paymentCount = 0;
-    let cancelCount = 0;
+    let totalAmount = 0;  //총 금액
+    let paymentCount = 0; //결제 건수
+    let cancelCount = 0;  //취소 건수
 
-    // 1. 웹소켓 연결 (서버의 /ws-stomp 엔드포인트)
-    const socket = new SockJS('/ws-stomp');
-    const stompClient = Stomp.over(socket);
+    const paymentCountPTag = document.querySelector("#payment-count");
+    const totalAmountPTag = document.querySelector("#total-amount");
+    const cancelCountPTag = document.querySelector("#cancel-count");
 
-    // 콘솔 로그 너무 빽빽하게 찍히는 거 방지 (디버그 모드 끄기)
-    stompClient.debug = null;
+    let sock = new SockJS("/ws-stomp");
+    let stomp = Stomp.over(sock);
+    stomp.debug = null;
 
-    stompClient.connect({}, function (frame) {
-        // 연결 성공 시 상태 표시 변경
-        const statusDiv = document.getElementById('connection-status');
-        statusDiv.className = "flex items-center space-x-2 text-sm font-semibold text-green-500";
-        statusDiv.innerHTML = `
-                <span class="w-3 h-3 bg-green-500 rounded-full inline-block"></span>
-                <span>실시간 연결됨 (STOMP)</span>
-            `;
+    let connect = stomp.connect({}, successCallback, errorCallback);
 
-        // 2. "/topic/admin/payment" 채널 구독 시작!
-        stompClient.subscribe('/topic/admin/payment', function (response) {
-            const data = JSON.parse(response.body);
-            handleRealtimeEvent(data);
-        });
-    }, function (error) {
-        const statusDiv = document.getElementById('connection-status');
-        statusDiv.className = "flex items-center space-x-2 text-sm font-semibold text-red-500";
-        statusDiv.innerHTML = `<span>연결 실패 (서버를 확인하세요)</span>`;
-    });
+    function successCallback() {
+        //연결 성공시, 연결성공, text 초록으로 변경
+        const connectStatusSpan = document.querySelectorAll("#connection-status span");
+        connectStatusSpan[0].classList.remove("bg-red-500");
+        connectStatusSpan[0].classList.add("bg-green-500");
+        connectStatusSpan[1].classList.add("text-green-500");
+        connectStatusSpan[1].textContent = "연결 완료";
 
-    // 3. 서버에서 메시지가 왔을 때 화면 업데이트 함수
-    function handleRealtimeEvent(data) {
-        // '데이터 없음' 안내 행 삭제
-        const emptyRow = document.getElementById('empty-row');
-        if (emptyRow) emptyRow.remove();
-
-        const logList = document.getElementById('event-log-list');
-        const newRow = document.createElement('tr');
-        newRow.className = "hover:bg-gray-50 transition-colors animate-pulse"; // 깜빡임 효과
-
-        const now = new Date().toLocaleTimeString();
-
-        if (data.type === 'PAYMENT_SUCCESS') {
-            // 수치 증가
-            totalAmount += (data.amount || 0);
-            paymentCount += 1;
-
-            newRow.innerHTML = `
-                    <td class="py-3 px-6 font-bold text-green-600">결제 성공</td>
-                    <td class="py-3 px-6">${data.orderName || '결제 건'}</td>
-                    <td class="py-3 px-6 font-semibold">+${(data.amount || 0).toLocaleString()}원</td>
-                    <td class="py-3 px-6 text-gray-400">${now}</td>
-                `;
-        } else if (data.type === 'PAYMENT_CANCELED') {
-            // 수치 반영
-            totalAmount -= (data.amount || 0);
-            cancelCount += 1;
-
-            newRow.innerHTML = `
-                    <td class="py-3 px-6 font-bold text-red-500">결제 취소</td>
-                    <td class="py-3 px-6 text-gray-500">사유: ${data.reason || '단순 변심'}</td>
-                    <td class="py-3 px-6 font-semibold text-red-500">-${(data.amount || 0).toLocaleString()}원</td>
-                    <td class="py-3 px-6 text-gray-400">${now}</td>
-                `;
-        }
-
-        // 최신 로그가 맨 위에 올라오도록 상단 삽입
-        logList.insertBefore(newRow, logList.firstChild);
-
-        // 대시보드 카운터 숫징 갱신
-        document.getElementById('total-amount').innerText = `${totalAmount.toLocaleString()} 원`;
-        document.getElementById('payment-count').innerText = `${paymentCount} 건`;
-        document.getElementById('cancel-count').innerText = `${cancelCount} 건`;
+        stomp.subscribe("/topic/admin/payment", function (response) {
+            let data = JSON.parse(response.body);
+            console.log(data);
+            if(data.type === "PAYMENT_SUCCESS") {
+                paymentCount = paymentCount + 1;
+                paymentCountPTag.textContent = paymentCount + " 건";
+                totalAmount = totalAmount + data.amount;
+                totalAmountPTag.textContent = totalAmount + " 원";
+            }else if(data.type === "PAYMENT_CANCELED") {
+                cancelCount = cancelCount + 1;
+                cancelCountPTag.textContent = cancelCount + " 건";
+                totalAmount = totalAmount - data.amount;
+                totalAmountPTag.textContent = totalAmount + " 원";
+            }
+        })
     }
+
+    function errorCallback() {
+
+    }
+
+
 </script>
 </body>
 </html>
