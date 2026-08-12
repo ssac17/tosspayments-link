@@ -113,13 +113,13 @@
                 paymentCountPTag.textContent = paymentCount + " 건";
                 totalAmount = totalAmount + data.amount;
                 totalAmountPTag.textContent = totalAmount + " 원";
-                addRealtimeRow(data);
             }else if(data.type === "PAYMENT_CANCELED") {
                 cancelCount = cancelCount + 1;
                 cancelCountPTag.textContent = cancelCount + " 건";
                 totalAmount = totalAmount - data.amount;
                 totalAmountPTag.textContent = totalAmount + " 원";
             }
+            addRealtimeRow(data);
         })
     }
 

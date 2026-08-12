@@ -27,6 +27,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -149,9 +150,24 @@ public class PayService {
 
     public AdminTodaySummaryDto findNewestPayments() {
         OffsetDateTime todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toOffsetDateTime();
-        List<Payment> paymentList = payRepository.findTop10ByApprovedAtGreaterThanEqualOrderByApprovedAtDesc(todayStart);
-        log.info("paymentList: {}", paymentList);
-        return AdminTodaySummaryDto.from(paymentList);
+        List<Payment> doneList = payRepository.findTop10ByApprovedAtGreaterThanEqualOrderByApprovedAtDesc(todayStart);
+        List<Payment> cancelList = payRepository.findTodayTimelineTop10(todayStart);
+        int totalAmount = doneList.stream().mapToInt(Payment::getTotalAmount).sum();
+        List<Payment> timeline10 = Stream.concat(doneList.stream(), cancelList.stream())
+                .distinct()
+                .sorted((p1, p2) -> getEventTime(p2).compareTo(getEventTime(p1))) // 최신순 정렬
+                .limit(10)
+                .toList();
+        long doneCount = payRepository.countByStatusAndApprovedAtGreaterThanEqual(PaymentStatus.DONE, todayStart);
+        long cancelCount = payRepository.countDistinctByCancels_CanceledAtGreaterThanEqual(todayStart);
+
+        return AdminTodaySummaryDto.from(totalAmount, doneCount, cancelCount, timeline10);
+    }
+    private OffsetDateTime getEventTime(Payment payment) {
+        if (payment.getStatus() == PaymentStatus.CANCELED && !payment.getCancels().isEmpty()) {
+            return payment.getCancels().get(0).getCanceledAt();
+        }
+        return payment.getApprovedAt();
     }
 
     private Payment saveResponse(JSONObject responseJson) {
