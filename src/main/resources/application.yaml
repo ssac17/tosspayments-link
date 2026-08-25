@@ -1,6 +1,8 @@
 spring:
   application:
     name: tosspayments-link
+  main:
+    lazy-initialization: true # 필요한 빈만 지연 로딩
 
   devtools:
     livereload:
