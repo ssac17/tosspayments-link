@@ -73,7 +73,7 @@ public class PayService {
             log.info("결제 승인 성공: {}", responseJson);
 
             Long productId = Long.valueOf(requestObj.get("productId").toString());
-            Product product = productRepository.findByIdWithLock(productId)
+            Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new IllegalArgumentException("상품이 존재하지 않습니다."));
             //영속성 컨텍스트(Persistence Context)
             //트랜잭션 종료 시 '변경 감지(Dirty Checking)' 동작, update 실행
