@@ -17,14 +17,14 @@ spring:
           period: 0 # 정적 리소스 캐시 끄기
 
   datasource:
-    url: jdbc:mysql://gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/sys?sslMode=VERIFY_IDENTITY
+    url: jdbc:mysql://gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?sslMode=VERIFY_IDENTITY
     username: 2F6pfXnDpZpM7wr.root
     password: vnynSuOUH2kKnkXs
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         format_sql: true
@@ -34,7 +34,3 @@ spring:
 widget:
   secret:
     key: "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6"
-
-
-
-
