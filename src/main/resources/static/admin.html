@@ -112,12 +112,12 @@
                 paymentCount = paymentCount + 1;
                 paymentCountPTag.textContent = paymentCount + " 건";
                 totalAmount = totalAmount + data.amount;
-                totalAmountPTag.textContent = totalAmount + " 원";
+                totalAmountPTag.textContent = totalAmount.toLocaleString() + " 원";
             }else if(data.type === "PAYMENT_CANCELED") {
                 cancelCount = cancelCount + 1;
                 cancelCountPTag.textContent = cancelCount + " 건";
                 totalAmount = totalAmount - data.amount;
-                totalAmountPTag.textContent = totalAmount + " 원";
+                totalAmountPTag.textContent = totalAmount.toLocaleString() + " 원";
             }
             addRealtimeRow(data);
         })
@@ -138,7 +138,7 @@
         totalAmount = data.totalAmount;
         paymentCount = data.paymentCount;
         cancelCount = data.cancelCount;
-        totalAmountPTag.textContent = totalAmount + " 원";
+        totalAmountPTag.textContent = totalAmount.toLocaleString() + " 원";
         paymentCountPTag.textContent = paymentCount + " 건";
         cancelCountPTag.textContent = cancelCount + " 건";
         
