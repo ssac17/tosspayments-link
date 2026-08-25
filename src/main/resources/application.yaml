@@ -2,19 +2,17 @@ spring:
   application:
     name: tosspayments-link
 
-    # application.yml 예시
-
-    devtools:
-      livereload:
-        enabled: true # 파일 변경 시 브라우저 자동 새로고침 켜기
-      restart:
-        enabled: true
-    thymeleaf: # Thymeleaf 사용 시
-      cache: false
-    web:
-      resources:
-        cache:
-          period: 0 # 정적 리소스 캐시 끄기
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+  thymeleaf:
+    cache: false
+  web:
+    resources:
+      cache:
+        period: 0
 
   datasource:
     url: jdbc:mysql://gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?sslMode=VERIFY_IDENTITY
@@ -29,7 +27,7 @@ spring:
       hibernate:
         format_sql: true
         show_sql: true
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
 
 widget:
   secret:
