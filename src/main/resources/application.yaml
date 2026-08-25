@@ -1,22 +1,39 @@
-# 1단계: 빌드 환경 (OpenJDK 25)
-FROM openjdk:25-ea-jdk-slim AS builder
-WORKDIR /app
-  
-  # 소스 전체 복사
-COPY . .
-  
-  # gradlew 실행 권한 부여 및 빌드
-RUN chmod +x ./gradlew
-RUN ./gradlew bootJar --no-daemon -x test
-  
-  # 2단계: 런타임 환경 (OpenJDK 25)
-FROM openjdk:25-ea-jdk-slim
-WORKDIR /app
-  
-  # 빌드된 JAR 파일 복사
-COPY --from=builder /app/build/libs/*.jar app.jar
+spring:
+  application:
+    name: tosspayments-link
 
-ENV PORT=8080
-EXPOSE 8080
+    # application.yml 예시
 
-ENTRYPOINT ["java", "-Xms128m", "-Xmx320m", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]
+    devtools:
+      livereload:
+        enabled: true # 파일 변경 시 브라우저 자동 새로고침 켜기
+      restart:
+        enabled: true
+    thymeleaf: # Thymeleaf 사용 시
+      cache: false
+    web:
+      resources:
+        cache:
+          period: 0 # 정적 리소스 캐시 끄기
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/tosspayments?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    password: "1234"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+
+widget:
+  secret:
+    key: "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6"
+
+
+
+
