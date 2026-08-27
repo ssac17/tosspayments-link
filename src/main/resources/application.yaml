@@ -10,7 +10,7 @@ spring:
     restart:
       enabled: true
   thymeleaf:
-    cache: false
+    cache: true
   web:
     resources:
       cache:
@@ -21,14 +21,17 @@ spring:
     username: 2F6pfXnDpZpM7wr.root
     password: vnynSuOUH2kKnkXs
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
 
   jpa:
     hibernate:
       ddl-auto: create
     properties:
       hibernate:
-        format_sql: true
-        show_sql: true
+        format_sql: false
+        show_sql: false
         dialect: org.hibernate.dialect.MySQLDialect
 
 widget:
