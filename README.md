@@ -4,7 +4,7 @@
 
 Spring Boot 기반의 엔터프라이즈급 RESTful API 서버입니다. Toss Payments API를 연동하여 **안전하고 확장 가능한 결제 처리**, **실시간 모니터링**, **동시성 제어**를 구현했습니다.
 
-🔗 **실제 배포 주소**: [https://tosspayments-link.onrender.com](https://tosspayments-link.onrender.com)
+🔗 **실제 배포 주소**: [https://tosspay-practice.duckdns.org](https://tosspay-practice.duckdns.org)
 
 ## 프로젝트 개요
 
